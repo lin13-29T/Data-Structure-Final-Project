@@ -2,6 +2,8 @@ package Characters;
 
 import java.util.LinkedList;
 import Items.*;
+import cu.edu.cujae.ceis.tree.general.GeneralTree;
+import Misc.*;
 
 public class Hero {
 
@@ -13,6 +15,8 @@ public class Hero {
     private LinkedList<Item> items;
     private LinkedList<Weapon> weapons;
     private Weapon actualWeapon;
+    private GeneralTree<Classes> unlockedClasses;
+    private Classes actualClass;
 
     public String getName() {
         return name;
@@ -78,6 +82,4 @@ public class Hero {
         this.actualWeapon = actualWeapon;
     }
 
-    
-    
 }

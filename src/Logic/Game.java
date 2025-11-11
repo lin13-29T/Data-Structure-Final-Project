@@ -3,6 +3,7 @@ package Logic;
 import Items.*;
 import Characters.*;
 import Misc.*;
+import cu.edu.cujae.ceis.tree.general.GeneralTree;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class Game {
     private Queue<Task> tasks;
     private Deque<Task> completedTasks;
     private ArrayList<Item> items;
+    private GeneralTree<Classes> classes;
 
 
     public File getSave() {
@@ -57,6 +59,7 @@ public class Game {
     public void setItems(ArrayList<Item> items) {
         this.items = items;
     }
+    
 
 
 }
