@@ -223,6 +223,7 @@ public class MainScreen extends GameApplication {
                 a.setTitle("Holis");
                 a.setHeaderText("Se supone que deba haber una configuracion xd");
                 a.setContentText("Hola, soy la configuracion xdxd");
+                a.showAndWait();
                 break;
             case "Salir":
                 Platform.runLater(() -> {
@@ -239,3 +240,4 @@ public class MainScreen extends GameApplication {
         launch(args);
     }
 }
+
