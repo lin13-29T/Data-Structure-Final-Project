@@ -31,7 +31,6 @@ public class Game {
 
     public void createHero(String name) {
         hero = new Hero(name);
-
     }
 
     public LocalDateTime getPlayedTime() {
@@ -101,10 +100,9 @@ public class Game {
 
     public boolean createSaveGame() {
         boolean created = false;
-        try {
-            RandomAccessFile raf = new RandomAccessFile(save, "rw");
+        try (RandomAccessFile raf = new RandomAccessFile(save, "rw")) {
             byte[] data = Convert.toBytes(hero);
-            raf.write(data.length);
+            raf.writeInt(data.length);
             raf.write(data);
             created = true;
         } catch (IOException e) {
@@ -115,14 +113,12 @@ public class Game {
 
     public boolean readSaveGame() {
         boolean correct = false;
-        try {
-            RandomAccessFile raf = new RandomAccessFile(save, "rw");
+        try (RandomAccessFile raf = new RandomAccessFile(save, "rw")) {
             int len = raf.readInt();
             byte[] data = new byte[len];
-            raf.read(data);
+            raf.readFully(data);
             hero = (Hero) Convert.toObject(data);
             correct = true;
-
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
