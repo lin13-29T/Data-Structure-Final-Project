@@ -2,8 +2,8 @@ package Runner;
 
 import Characters.Hero;
 import Logic.Game;
-import Interfaces.GameMapScreen;
-import Interfaces.FieldVillage;
+import GUI.GameMapScreen;
+import GUI.FieldVillage;
 import com.almasb.fxgl.app.GameApplication;
 import static com.almasb.fxgl.app.GameApplication.launch;
 import com.almasb.fxgl.app.GameSettings;
