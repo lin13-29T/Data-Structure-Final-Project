@@ -4,15 +4,16 @@ import Logic.Game;
 import Characters.Monster;
 import Characters.Hero;
 import Items.Weapon;
-import Misc.Classes;
 import com.almasb.fxgl.dsl.FXGL;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -27,21 +28,12 @@ import javafx.scene.text.Text;
 import Runner.MainScreen;
 
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
 
-/**
- * CombatScreen actualizado: - Héroe fijo a la izquierda (usa la imagen del Hero
- * si está disponible). - Monstruos alineados a la derecha del centro en fila. -
- * Botones de acción abajo; flechas para seleccionar, Enter para ejecutar. -
- * Battle/Item/Defend muestran alertas de éxito. - Al ejecutar Battle el héroe
- * ataca; luego cada monstruo vivo ataca al héroe. - Tras cada ataque se revisa
- * si alguien murió: - Si un monstruo muere y ya no quedan monstruos, el combate
- * termina y se vuelve al mapa (onExit). - Si el héroe muere, se muestra
- * pantalla Game Over (gameOver.png + gameOver.mp3). El botón Start lleva al
- * menú principal.
- */
 public class CombatScreen {
 
     public final StackPane root;
@@ -49,11 +41,11 @@ public class CombatScreen {
     private final ImageView backgroundView;
 
     // Layout regions
-    private final Pane leftPane;      // para héroe fijo
-    private final Pane centerPane;    // espacio central (vacío)
-    private final Pane rightPane;     // para monstruos (a la derecha del centro)
-    private final HBox monstersBox;   // fila de monstruos
-    private final HBox actionButtons; // botones de acción
+    private final Pane leftPane;
+    private final Pane centerPane;
+    private final Pane rightPane;
+    private final HBox monstersBox;
+    private final HBox actionButtons;
 
     private final Game game;
     private final List<Monster> monsters = new ArrayList<>();
@@ -67,16 +59,21 @@ public class CombatScreen {
     private Runnable onExit; // callback opcional al cerrar combate
 
     // Game Over UI
-    private Pane gameOverOverlay = null;
+    private StackPane gameOverOverlay = null;
     private MediaPlayer gameOverPlayer = null;
 
-    /**
-     * @param game instancia del juego (puede ser null para debug)
-     * @param bgPath ruta del fondo (ej: "/Resources/textures/battle_bg.png")
-     * @param monsterSpritePaths lista de rutas de sprites para elegir
-     * aleatoriamente
-     * @param heroForIcon héroe para usar su imagen en el icono (puede ser null)
-     */
+    // Música de combate
+    private MediaPlayer battleMusic = null;
+
+    // Flag que indica que estamos en estado Game Over (bloquea inputs salvo Start)
+    private volatile boolean gameOverActive = false;
+
+    // Cola de toasts (mensajes temporales no modales, uno a la vez)
+    private final ToastQueue toastQueue = new ToastQueue();
+
+    // Label para mostrar vida del héroe (actual / total)
+    private final Label heroHpLabel = new Label();
+
     public CombatScreen(Game game, String bgPath, List<String> monsterSpritePaths, Hero heroForIcon) {
         this.game = game;
 
@@ -108,14 +105,15 @@ public class CombatScreen {
         centerPane.setLayoutX(220);
         centerPane.setLayoutY(0);
 
+        // Mover rightPane más cerca del centro para que los monstruos no se salgan
         rightPane = new Pane();
         rightPane.setPrefSize(220, 600);
-        rightPane.setLayoutX(580);
+        rightPane.setLayoutX(520);
         rightPane.setLayoutY(0);
 
-        // Monstruos: fila dentro del rightPane, alineada al centro vertical y a la derecha horizontalmente
-        monstersBox = new HBox(12);
-        monstersBox.setAlignment(Pos.CENTER_RIGHT);
+        // Monstruos: fila dentro del rightPane, alineada al centro
+        monstersBox = new HBox(8);
+        monstersBox.setAlignment(Pos.CENTER);
         monstersBox.setPrefWidth(200);
         monstersBox.setLayoutX(10);
         monstersBox.setLayoutY(120);
@@ -139,9 +137,13 @@ public class CombatScreen {
         // Héroe: icono fijo, centrado verticalmente dentro de leftPane
         createHeroIcon(heroForIcon);
 
-        // Generar entre 1 y 3 monstruos y colocarlos en monstersBox (fila, alineados a la derecha del centro)
+        // Hero HP label: esquina superior derecha
+        setupHeroHpLabel();
+
+        // Generar entre 1 y 3 monstruos y colocarlos en monstersBox (fila, alineados al centro)
         int count = 1 + rnd.nextInt(3);
-        for (int i = 0; i < count; i++) {
+        int i = 0;
+        while (i < count) {
             String sprite = chooseRandomSprite(monsterSpritePaths);
             Monster m = createDebugMonster(sprite, "Monstruo " + (i + 1));
             monsters.add(m);
@@ -155,6 +157,7 @@ public class CombatScreen {
             wrapper.getChildren().addAll(mv, name);
             wrapper.setMouseTransparent(true);
             monstersBox.getChildren().add(wrapper);
+            i = i + 1;
         }
 
         // Crear botones y lógica de selección
@@ -163,20 +166,81 @@ public class CombatScreen {
         // Instalar manejadores de teclado para controlar botones
         installKeyHandlers();
 
-        // Estética y foco
+        // Reproducir música de combate cuando la escena se añade
+        root.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                stopBattleMusic();
+                playBattleMusic();
+                Platform.runLater(root::requestFocus);
+            } else {
+                stopBattleMusic();
+            }
+        });
+
+        // Inicializar visual de HP
+        updateHeroHpDisplay();
+
         root.setCursor(Cursor.DEFAULT);
         Platform.runLater(() -> root.requestFocus());
     }
 
-    private String chooseRandomSprite(List<String> paths) {
-        if (paths == null || paths.isEmpty()) {
-            return "/Resources/sprites/monster1.png";
-        }
-        return paths.get(rnd.nextInt(paths.size()));
+    private void setupHeroHpLabel() {
+        heroHpLabel.setStyle("-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-padding: 6 10 6 10; -fx-background-radius: 6;");
+        heroHpLabel.setFont(Font.font(13));
+        heroHpLabel.setMouseTransparent(true);
+        // Posicionar en la esquina superior derecha
+        StackPane.setAlignment(heroHpLabel, Pos.TOP_RIGHT);
+        heroHpLabel.setTranslateX(-12); // margen desde el borde derecho
+        heroHpLabel.setTranslateY(12);  // margen desde el borde superior
+        // Añadir al root para que quede encima de todo
+        root.getChildren().add(heroHpLabel);
     }
 
+    private void updateHeroHpDisplay() {
+        Platform.runLater(() -> {
+            try {
+                if (game != null && game.getHero() != null) {
+                    int actual = game.getHero().getActualLife();
+                    int max = game.getHero().getLife();
+                    heroHpLabel.setText("HP: " + actual + " / " + max);
+                } else {
+                    heroHpLabel.setText("HP: - / -");
+                }
+            } catch (Throwable ignored) {
+                heroHpLabel.setText("HP: - / -");
+            }
+        });
+    }
+
+    private String chooseRandomSprite(List<String> paths) {
+        String out = "/Resources/sprites/monster1.png";
+        if (paths != null && !paths.isEmpty()) {
+            int idx = rnd.nextInt(paths.size());
+            if (idx >= 0 && idx < paths.size()) {
+                out = paths.get(idx);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Método solicitado: constructor de Monster con la firma que pediste. Evita
+     * returns/breaks/continues en la búsqueda del arma.
+     */
     private Monster createDebugMonster(String spritePath, String name) {
-        Weapon w = (Weapon) game.getItems().get(1);
+        Weapon w = null;
+        int idx = 0;
+        int itemsSize = game.getItems().size();
+        boolean foundWeapon = false;
+        while (idx < itemsSize && !foundWeapon) {
+            Object it = game.getItems().get(idx);
+            if (it instanceof Weapon) {
+                w = (Weapon) it;
+                foundWeapon = true;
+            }
+            idx = idx + 1;
+        }
+
         int attack = 4;
         int magic = 0;
         int defense = 1;
@@ -184,12 +248,18 @@ public class CombatScreen {
         int level = 1;
         int life = 12;
         int actualLife = 12;
+
         Monster m = new Monster(w, attack, magic, defense, velocidad, level, name, spritePath, life, actualLife);
+
         return m;
     }
 
     private ImageView createMonsterView(Monster m) {
-        Image img = m.getFxImage();
+        Image img = null;
+        try {
+            img = m.getFxImage();
+        } catch (Throwable ignored) {
+        }
         if (img == null) {
             try {
                 img = new Image(getClass().getResourceAsStream("/Resources/sprites/monster1.png"));
@@ -198,8 +268,8 @@ public class CombatScreen {
         }
         ImageView iv = new ImageView(img);
         iv.setPreserveRatio(true);
-        iv.setFitWidth(96);
-        iv.setFitHeight(96);
+        iv.setFitWidth(88);
+        iv.setFitHeight(88);
         iv.setSmooth(true);
         return iv;
     }
@@ -257,29 +327,30 @@ public class CombatScreen {
         buttons.add(bDefend);
         buttons.add(bEscape);
 
-        // Acciones: Battle/Item/Defend muestran alerta de éxito; Battle además ejecuta combate
         bBattle.setOnAction(e -> {
-            // Hero attacks first
-            onBattle();
+            if (!gameOverActive) {
+                onBattle();
+            }
         });
         bItem.setOnAction(e -> {
-            showSuccessAlert("Item", "La acción Item se ejecutó correctamente.");
-            // After using item you might want monsters to attack as well (optional)
-            monstersAttackAfterHeroAction();
+            if (!gameOverActive) {
+                toastQueue.enqueue("Item: acción ejecutada correctamente.");
+                monstersAttackAfterHeroAction();
+            }
         });
         bDefend.setOnAction(e -> {
-            showSuccessAlert("Defend", "La acción Defend se ejecutó correctamente.");
-            // After defend, monsters attack (defend effect not implemented here)
-            monstersAttackAfterHeroAction();
+            if (!gameOverActive) {
+                toastQueue.enqueue("Defend: acción ejecutada correctamente.");
+                monstersAttackAfterHeroAction();
+            }
         });
         bEscape.setOnAction(e -> {
-            // Escape cierra el combate y vuelve al mapa (sustituye la acción previa)
-            closeCombatAndReturnToMap();
+            if (!gameOverActive) {
+                closeCombatAndReturnToMap();
+            }
         });
 
         actionButtons.getChildren().addAll(bBattle, bItem, bDefend, bEscape);
-
-        // Inicializar selección visual
         updateButtonSelection();
     }
 
@@ -294,9 +365,13 @@ public class CombatScreen {
 
     private void installKeyHandlers() {
         root.addEventFilter(KeyEvent.KEY_PRESSED, ev -> {
+            if (gameOverActive) {
+                ev.consume();
+                return;
+            }
+
             KeyCode code = ev.getCode();
 
-            // Navegación entre botones con flechas
             if (code == KeyCode.LEFT) {
                 ev.consume();
                 selectedButtonIndex = Math.max(0, selectedButtonIndex - 1);
@@ -310,7 +385,6 @@ public class CombatScreen {
                 return;
             }
 
-            // Enter ejecuta la acción seleccionada
             if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
                 ev.consume();
                 Button sel = buttons.get(selectedButtonIndex);
@@ -320,7 +394,6 @@ public class CombatScreen {
                 return;
             }
 
-            // Atajos directos 1..4 para botones
             if (code == KeyCode.DIGIT1 || code == KeyCode.NUMPAD1) {
                 ev.consume();
                 buttons.get(0).fire();
@@ -348,7 +421,6 @@ public class CombatScreen {
                 return;
             }
 
-            // Escape cierra combate
             if (code == KeyCode.ESCAPE) {
                 ev.consume();
                 closeCombatAndReturnToMap();
@@ -357,97 +429,102 @@ public class CombatScreen {
     }
 
     private void updateButtonSelection() {
-        for (int i = 0; i < buttons.size(); i++) {
+        int i = 0;
+        while (i < buttons.size()) {
             Button b = buttons.get(i);
             if (i == selectedButtonIndex) {
                 b.setStyle("-fx-background-color: linear-gradient(#ffd54f,#ffb300); -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 6; -fx-border-color: #ffffff55; -fx-border-width: 2;");
             } else {
                 b.setStyle("-fx-background-color: linear-gradient(#3a7bd5,#00d2ff); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
             }
+            i = i + 1;
         }
-    }
-
-    // Muestra una alerta de información indicando que la acción fue exitosa
-    private void showSuccessAlert(String title, String message) {
-        Platform.runLater(() -> {
-            Alert a = new Alert(Alert.AlertType.INFORMATION);
-            a.setTitle(title);
-            a.setHeaderText(null);
-            a.setContentText(message);
-            try {
-                if (root.getScene() != null && root.getScene().getWindow() != null) {
-                    a.initOwner(root.getScene().getWindow());
-                }
-            } catch (Throwable ignored) {
-            }
-            a.showAndWait();
-            // devolver foco a la pantalla de combate y mantener selección
-            Platform.runLater(root::requestFocus);
-        });
     }
 
     // --- acciones de combate y flujo ---
-    // Ejecuta la acción Battle: héroe ataca al primer monstruo vivo, luego los monstruos atacan
     private void onBattle() {
-
-        // Héroe ataca al primer monstruo vivo
+        boolean hadTarget = false;
         Monster target = null;
-        for (Monster m : monsters) {
+        int tIndex = 0;
+        int monstersCount = monsters.size();
+
+        // Buscar primer monstruo vivo (sin break)
+        while (tIndex < monstersCount && !hadTarget) {
+            Monster m = monsters.get(tIndex);
             if (m.getActualLife() > 0) {
                 target = m;
-                break;
+                hadTarget = true;
+            }
+            tIndex = tIndex + 1;
+        }
+
+        boolean endCombatNow = false;
+        if (!hadTarget) {
+            endCombatNow = true;
+        }
+
+        boolean heroDidDamage = false;
+        if (!endCombatNow && target != null) {
+            heroDidDamage = game.heroCombat(target);
+            final Monster finalTarget = target;
+            final boolean finalHeroDidDamage = heroDidDamage;
+            String heroMsg = finalHeroDidDamage
+                    ? ("Has atacado a " + finalTarget.getName() + ". Vida restante del monstruo: " + finalTarget.getActualLife())
+                    : "Tu ataque no hizo daño.";
+            toastQueue.enqueue(heroMsg);
+        }
+
+        boolean removedOne = false;
+        if (!endCombatNow && target != null && game.checkGameOver(target.getActualLife())) {
+            removeMonster(target);
+            removedOne = true;
+        }
+
+        if (!endCombatNow) {
+            if (monsters.isEmpty()) {
+                endCombatNow = true;
             }
         }
 
-        if (target == null) {
-            // todos muertos
+        if (endCombatNow) {
             endCombatAndReturnToMap();
             return;
         }
 
-        boolean heroDidDamage = game.heroCombat(target);
-        if (heroDidDamage) {
-            // mostrar alerta de acción exitosa
-            showSuccessAlert("Battle", "Has atacado a " + target.getName() + ".");
-        } else {
-            showSuccessAlert("Battle", "Tu ataque no hizo daño.");
-        }
-
-        // Si el monstruo murió, removerlo y comprobar si quedan monstruos
-        if (game.checkGameOver(target.getActualLife())) {
-            removeMonster(target);
-            if (monsters.isEmpty()) {
-                // victoria: terminar combate y volver al mapa
-                endCombatAndReturnToMap();
-            }
-        }
-
-        // Si aún hay monstruos vivos, que ataquen al héroe
         monstersAttackAfterHeroAction();
     }
 
-    // Después de una acción del héroe (no necesariamente Battle), los monstruos vivos atacan
     private void monstersAttackAfterHeroAction() {
-        int cont = 0;
-        for (Monster m : new ArrayList<>(monsters)) {
-            if (m.getActualLife() <= 0) {
-                Alert a = new Alert(Alert.AlertType.INFORMATION);
-                a.setTitle("Ha atacado");
-                a.setHeaderText(null);
-                a.setContentText("Ha atacado el monstruo" + cont++);
+        int idx = 0;
+        int total = monsters.size();
+        boolean heroDied = false;
+
+        while (idx < total && !heroDied) {
+            Monster m = monsters.get(idx);
+            boolean alive = m.getActualLife() > 0;
+            if (alive) {
+                boolean monsterDidDamage = game.combat(m);
+                int heroHp = game.getHero().getActualLife();
+                final String msg = monsterDidDamage
+                        ? (m.getName() + " atacó. Vida restante del héroe: " + heroHp)
+                        : (m.getName() + " atacó pero no hizo daño. Vida del héroe: " + heroHp);
+
+                // Encolar toast y actualizar HP display inmediatamente después del ataque
+                toastQueue.enqueue(msg);
+                updateHeroHpDisplay();
+
+                if (game.checkGameOver(heroHp)) {
+                    heroDied = true;
+                }
             }
-            boolean monsterDidDamage = game.combat(m);
-            // opcional: podrías mostrar mensajes por cada ataque; aquí solo comprobamos muerte
-            if (game.checkGameOver(game.getHero().getActualLife())) {
-                // héroe muerto -> mostrar Game Over
-                showGameOver();
-             
-                return;
-            }
+            idx = idx + 1;
+        }
+
+        if (heroDied) {
+            showGameOver();
         }
     }
 
-    // Remueve un monstruo de la lista y de la UI
     private void removeMonster(Monster m) {
         int idx = monsters.indexOf(m);
         if (idx >= 0) {
@@ -459,8 +536,8 @@ public class CombatScreen {
         }
     }
 
-    // Termina el combate y vuelve al mapa (usa onExit si está definido)
     private void endCombatAndReturnToMap() {
+        stopBattleMusic();
         Platform.runLater(() -> {
             try {
                 FXGL.getGameScene().removeUINode(root);
@@ -472,22 +549,27 @@ public class CombatScreen {
         });
     }
 
-    // Cierra combate y regresa al mapa (invocado por Escape o por botón Escape)
     private void closeCombatAndReturnToMap() {
         endCombatAndReturnToMap();
     }
 
-    // Muestra pantalla Game Over con imagen y música; Start lleva al menú principal
+    // --- Game Over ---
     private void showGameOver() {
         Platform.runLater(() -> {
-            // Crear overlay si no existe
             if (gameOverOverlay != null) {
                 return;
             }
 
-            Pane overlay = new Pane();
+            gameOverActive = true;
+
+            stopBattleMusic();
+
+            StackPane overlay = new StackPane();
             overlay.setPrefSize(800, 600);
             overlay.setStyle("-fx-background-color: rgba(0,0,0,0.85);");
+
+            VBox vbox = new VBox(18);
+            vbox.setAlignment(Pos.CENTER);
 
             Image goImg = null;
             try {
@@ -498,25 +580,16 @@ public class CombatScreen {
             goView.setPreserveRatio(true);
             goView.setFitWidth(600);
             goView.setFitHeight(400);
-            goView.setLayoutX((800 - 600) / 2.0);
-            goView.setLayoutY(60);
 
             Button startBtn = new Button("Start");
             startBtn.setMinWidth(160);
             startBtn.setMinHeight(44);
             startBtn.setStyle("-fx-background-color: linear-gradient(#ff5f6d,#ffc371); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
             startBtn.setFont(Font.font(16));
-            startBtn.setLayoutX((800 - 160) / 2.0);
-            startBtn.setLayoutY(500);
-            
-            Alert a = new Alert(Alert.AlertType.INFORMATION);
-                a.setTitle("Falleciste");
-                a.setHeaderText(null);
-                a.setContentText("Tu heroe fallecio xd");
 
             startBtn.setOnAction(ev -> {
-                // detener música y volver al menú principal
                 stopGameOverMusic();
+                stopBattleMusic();
                 try {
                     FXGL.getGameScene().removeUINode(root);
                 } catch (Throwable ignored) {
@@ -525,24 +598,26 @@ public class CombatScreen {
                     FXGL.getGameScene().removeUINode(overlay);
                 } catch (Throwable ignored) {
                 }
-                // Restaurar menú y música
                 MainScreen.restoreMenuAndMusic();
             });
 
-            overlay.getChildren().addAll(goView, startBtn);
+            vbox.getChildren().addAll(goView, startBtn);
+            overlay.getChildren().add(vbox);
+
             gameOverOverlay = overlay;
 
-            // Añadir overlay y reproducir música
             try {
                 FXGL.getGameScene().addUINode(overlay);
             } catch (Throwable ignored) {
             }
+
             playGameOverMusic();
         });
     }
 
     private void playGameOverMusic() {
         try {
+            stopGameOverMusic();
             URL res = getClass().getResource("/Resources/music/gameOver.mp3");
             if (res != null) {
                 Media media = new Media(res.toExternalForm());
@@ -566,6 +641,33 @@ public class CombatScreen {
         }
     }
 
+    // --- Música de combate (fieldBattle.mp3) ---
+    private void playBattleMusic() {
+        try {
+            stopBattleMusic();
+            URL res = getClass().getResource("/Resources/music/fieldBattle.mp3");
+            if (res != null) {
+                Media media = new Media(res.toExternalForm());
+                battleMusic = new MediaPlayer(media);
+                battleMusic.setCycleCount(MediaPlayer.INDEFINITE);
+                battleMusic.setVolume(MainScreen.getVolumeSetting());
+                battleMusic.play();
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void stopBattleMusic() {
+        try {
+            if (battleMusic != null) {
+                battleMusic.stop();
+                battleMusic.dispose();
+                battleMusic = null;
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     public void setOnExit(Runnable onExit) {
         this.onExit = onExit;
     }
@@ -578,5 +680,70 @@ public class CombatScreen {
             }
             root.requestFocus();
         });
+    }
+
+    // --- ToastQueue: muestra labels temporales en orden, uno a la vez ---
+    private class ToastQueue {
+
+        private final Queue<String> q = new ArrayDeque<>();
+        private boolean showing = false;
+        private final double DURATION_SECONDS = 1.2;
+        private final double FADE_SECONDS = 0.22;
+
+        public synchronized void enqueue(String msg) {
+            q.offer(msg == null ? "" : msg);
+            if (!showing) {
+                showing = true;
+                Platform.runLater(this::showNext);
+            }
+        }
+
+        private void showNext() {
+            String msg = q.poll();
+            if (msg == null) {
+                showing = false;
+                return;
+            }
+
+            Label lbl = new Label(msg);
+            lbl.setStyle("-fx-background-color: rgba(0,0,0,0.75); -fx-text-fill: white; -fx-padding: 10 16 10 16; -fx-background-radius: 8; -fx-font-size: 13;");
+            lbl.setOpacity(0.0);
+
+            StackPane container = new StackPane(lbl);
+            container.setPickOnBounds(false);
+            container.setMouseTransparent(true);
+            container.setPrefSize(800, 600);
+
+            StackPane.setAlignment(lbl, Pos.BOTTOM_CENTER);
+            lbl.setTranslateY(-72);
+
+            try {
+                if (root != null) {
+                    root.getChildren().add(container);
+                }
+            } catch (Throwable ignored) {
+            }
+
+            FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.seconds(FADE_SECONDS), lbl);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+
+            PauseTransition pause = new PauseTransition(javafx.util.Duration.seconds(DURATION_SECONDS));
+
+            FadeTransition fadeOut = new FadeTransition(javafx.util.Duration.seconds(FADE_SECONDS), lbl);
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+
+            fadeOut.setOnFinished(ev -> {
+                try {
+                    root.getChildren().remove(container);
+                } catch (Throwable ignored) {
+                }
+                Platform.runLater(this::showNext);
+            });
+
+            SequentialTransition seq = new SequentialTransition(fadeIn, pause, fadeOut);
+            seq.play();
+        }
     }
 }
