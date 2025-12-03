@@ -55,7 +55,7 @@ public class GameMapScreen {
 
     private final Game game;
 
-    // Ruta configurable para la música de combate (puedes setearla desde fuera)
+    // Ruta configurable para la música de combate
     private String combatMusicPath = "/Resources/music/fieldBattle.mp3";
 
     public enum Direction {
@@ -65,7 +65,7 @@ public class GameMapScreen {
 
     private static final double VILLAGE_COLLISION_SCALE = 0.22;
 
-    // Offset específico para FIELD_VILLAGE (sube la colisión)
+    // Offset específico para FIELD_VILLAGE
     private static final double FV_COLLISION_OFFSET_Y = -18.0;
     private static final Double FV_COLLISION_W = null;
     private static final Double FV_COLLISION_H = null;
@@ -104,7 +104,7 @@ public class GameMapScreen {
 
         Image mapImg;
         try {
-            mapImg = new Image(getClass().getResourceAsStream("/Resources/textures/map.png"));
+            mapImg = new Image(getClass().getResourceAsStream("/Resources/textures/Main/map.png"));
         } catch (Throwable t) {
             mapImg = null;
         }
@@ -156,7 +156,6 @@ public class GameMapScreen {
                 double dt = (now - last) / 1e9;
                 last = now;
 
-                // Watchdog: si no hay foco, limpia inputs
                 if (root.getScene() == null || !root.isFocused()) {
                     clearInputState();
                     return;
@@ -197,11 +196,6 @@ public class GameMapScreen {
         });
     }
 
-    /**
-     * Setter público para que otras clases puedan cambiar la ruta de la música de combate.
-     *
-     * @param path ruta a usar (por ejemplo "/Resources/music/miBattle.mp3" o una URL/archivo)
-     */
     public void setCombatMusicPath(String path) {
         if (path != null && !path.isBlank()) {
             this.combatMusicPath = path;
@@ -379,12 +373,19 @@ public class GameMapScreen {
                     h.setLastLocation(Hero.Location.MAP);
                     h.setLastPosX(heroView.getLayoutX());
                     h.setLastPosY(heroView.getLayoutY());
-                    try { game.createSaveGame(); } catch (Throwable ignored) {}
+                    try {
+                        game.createSaveGame();
+                    } catch (Throwable ignored) {
+                    }
                 }
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
 
             stopMapMusic();
-            try { FXGL.getGameScene().removeUINode(root); } catch (Throwable ignored) {}
+            try {
+                FXGL.getGameScene().removeUINode(root);
+            } catch (Throwable ignored) {
+            }
             MainScreen.restoreMenuAndMusic();
         } else {
             clearInputState();
@@ -395,10 +396,18 @@ public class GameMapScreen {
     private void updateVelocity() {
         vx = 0;
         vy = 0;
-        if (left) vx -= SPEED;
-        if (right) vx += SPEED;
-        if (up) vy -= SPEED;
-        if (down) vy += SPEED;
+        if (left) {
+            vx -= SPEED;
+        }
+        if (right) {
+            vx += SPEED;
+        }
+        if (up) {
+            vy -= SPEED;
+        }
+        if (down) {
+            vy += SPEED;
+        }
         Direction newDir = (vx != 0 || vy != 0) ? directionFromVector(vx, vy) : Direction.NONE;
         setDirectionIfChanged(newDir);
     }
@@ -473,35 +482,64 @@ public class GameMapScreen {
 
     private static double clamp(double v, double lo, double hi) {
         double out = v;
-        if (out < lo) out = lo;
-        else if (out > hi) out = hi;
+        if (out < lo) {
+            out = lo;
+        } else if (out > hi) {
+            out = hi;
+        }
         return out;
     }
 
     private Direction directionFromVector(double vx, double vy) {
-        if (vx == 0 && vy == 0) return Direction.NONE;
+        if (vx == 0 && vy == 0) {
+            return Direction.NONE;
+        }
         double angle = Math.toDegrees(Math.atan2(-vy, vx));
-        if (angle < 0) angle += 360.0;
+        if (angle < 0) {
+            angle += 360.0;
+        }
 
-        if (angle >= 337.5 || angle < 22.5) return Direction.E;
-        if (angle < 67.5) return Direction.NE;
-        if (angle < 112.5) return Direction.N;
-        if (angle < 157.5) return Direction.NW;
-        if (angle < 202.5) return Direction.W;
-        if (angle < 247.5) return Direction.SW;
-        if (angle < 292.5) return Direction.S;
-        if (angle < 337.5) return Direction.SE;
+        if (angle >= 337.5 || angle < 22.5) {
+            return Direction.E;
+        }
+        if (angle < 67.5) {
+            return Direction.NE;
+        }
+        if (angle < 112.5) {
+            return Direction.N;
+        }
+        if (angle < 157.5) {
+            return Direction.NW;
+        }
+        if (angle < 202.5) {
+            return Direction.W;
+        }
+        if (angle < 247.5) {
+            return Direction.SW;
+        }
+        if (angle < 292.5) {
+            return Direction.S;
+        }
+        if (angle < 337.5) {
+            return Direction.SE;
+        }
         return Direction.NONE;
     }
 
     private void setDirectionIfChanged(Direction newDir) {
-        if (newDir == null) newDir = Direction.NONE;
+        if (newDir == null) {
+            newDir = Direction.NONE;
+        }
         currentDirection = newDir;
     }
 
-    public Direction getHeroDirection() { return currentDirection; }
+    public Direction getHeroDirection() {
+        return currentDirection;
+    }
 
-    public Point2D getHeroMapTopLeft() { return new Point2D(heroView.getLayoutX(), heroView.getLayoutY()); }
+    public Point2D getHeroMapTopLeft() {
+        return new Point2D(heroView.getLayoutX(), heroView.getLayoutY());
+    }
 
     public Point2D getHeroMapCenter() {
         double cx = heroView.getLayoutX() + heroView.getBoundsInLocal().getWidth() / 2.0;
@@ -515,9 +553,13 @@ public class GameMapScreen {
         return heroView.localToScene(localCx, localCy);
     }
 
-    public Point2D sceneToMap(double sceneX, double sceneY) { return container.sceneToLocal(sceneX, sceneY); }
+    public Point2D sceneToMap(double sceneX, double sceneY) {
+        return container.sceneToLocal(sceneX, sceneY);
+    }
 
-    public Point2D mapToScene(double mapX, double mapY) { return container.localToScene(mapX, mapY); }
+    public Point2D mapToScene(double mapX, double mapY) {
+        return container.localToScene(mapX, mapY);
+    }
 
     private void addVillageAtCenter(Point2D center, double visualW, double visualH, String id) {
         double vxVisual = center.getX() - visualW / 2.0;
@@ -532,8 +574,12 @@ public class GameMapScreen {
         double offsetY = 0.0;
 
         if ("FIELD_VILLAGE".equals(id)) {
-            if (FV_COLLISION_W != null) finalW = FV_COLLISION_W;
-            if (FV_COLLISION_H != null) finalH = FV_COLLISION_H;
+            if (FV_COLLISION_W != null) {
+                finalW = FV_COLLISION_W;
+            }
+            if (FV_COLLISION_H != null) {
+                finalH = FV_COLLISION_H;
+            }
             offsetY = FV_COLLISION_OFFSET_Y;
         }
 
@@ -710,17 +756,25 @@ public class GameMapScreen {
             clearInputState();
 
             stopMapMusic();
-            try { FXGL.getGameScene().removeUINode(root); } catch (Throwable ignored) {}
+            try {
+                FXGL.getGameScene().removeUINode(root);
+            } catch (Throwable ignored) {
+            }
 
             FieldVillage field = new FieldVillage(game);
             field.showWithLoading(null, () -> {
                 Platform.runLater(() -> {
                     MainScreen.hideMenu();
                     startMapMusic();
-                    try { FXGL.getGameScene().addUINode(root); } catch (Throwable ignored) {}
+                    try {
+                        FXGL.getGameScene().addUINode(root);
+                    } catch (Throwable ignored) {
+                    }
                     heroView.setLayoutX(savedHeroTopLeft.getX());
                     heroView.setLayoutY(savedHeroTopLeft.getY());
-                    if (debugEnabled) drawDebugObstacles();
+                    if (debugEnabled) {
+                        drawDebugObstacles();
+                    }
                     root.requestFocus();
                     clearInputState();
                     mover.start();
@@ -731,8 +785,16 @@ public class GameMapScreen {
             a.setTitle("Villa");
             a.setHeaderText(null);
             a.setContentText("Has interactuado con una villa");
-            try { if (root.getScene() != null && root.getScene().getWindow() != null) a.initOwner(root.getScene().getWindow()); } catch (Throwable ignored) {}
-            a.setOnHidden(ev -> { clearInputState(); Platform.runLater(root::requestFocus); });
+            try {
+                if (root.getScene() != null && root.getScene().getWindow() != null) {
+                    a.initOwner(root.getScene().getWindow());
+                }
+            } catch (Throwable ignored) {
+            }
+            a.setOnHidden(ev -> {
+                clearInputState();
+                Platform.runLater(root::requestFocus);
+            });
             a.showAndWait();
         }
     }
@@ -754,22 +816,25 @@ public class GameMapScreen {
         positionHeroCenter();
     }
 
-    public void enableDebugObstacles(boolean enable) { this.debugEnabled = enable; }
+    public void enableDebugObstacles(boolean enable) {
+        this.debugEnabled = enable;
+    }
 
-    public boolean isDebugEnabled() { return debugEnabled; }
+    public boolean isDebugEnabled() {
+        return debugEnabled;
+    }
 
     private void clearInputState() {
         up = down = left = right = false;
         vx = vy = 0;
     }
 
-
     private void openDebugCombat() {
-        String bg = "/Resources/textures/fieldBattle.png";
+        String bg = "/Resources/textures/Battle/fieldBattle.png";
         List<String> sprites = List.of(
-                "/Resources/sprites/monster1.png",
-                "/Resources/sprites/monster2.png",
-                "/Resources/sprites/monster3.png"
+                "/Resources/sprites/Monsters/monster1.png",
+                "/Resources/sprites/Monsters/monster2.png",
+                "/Resources/sprites/Monsters/monster3.png"
         );
 
         stopMapMusic();
@@ -777,18 +842,28 @@ public class GameMapScreen {
         GUI.CombatScreen cs = new GUI.CombatScreen(game, bg, sprites, game.getHero());
         // Pasar la ruta de música de combate configurada (si se cambió desde fuera)
         cs.setBattleMusicPath(combatMusicPath);
+        //cs.setBattleMusicPath("/Resources/music/bossBattle2.mp3");
 
         cs.setOnExit(() -> {
             Platform.runLater(() -> {
-                try { FXGL.getGameScene().removeUINode(cs.root); } catch (Throwable ignored) {}
-                try { FXGL.getGameScene().addUINode(root); } catch (Throwable ignored) {}
+                try {
+                    FXGL.getGameScene().removeUINode(cs.root);
+                } catch (Throwable ignored) {
+                }
+                try {
+                    FXGL.getGameScene().addUINode(root);
+                } catch (Throwable ignored) {
+                }
                 startMapMusic();
                 root.requestFocus();
             });
         });
 
         Platform.runLater(() -> {
-            try { FXGL.getGameScene().removeUINode(root); } catch (Throwable ignored) {}
+            try {
+                FXGL.getGameScene().removeUINode(root);
+            } catch (Throwable ignored) {
+            }
             cs.show();
         });
     }

@@ -114,7 +114,7 @@ public class MainScreen extends GameApplication {
 
     @Override
     protected void initUI() {
-        Image bgImage = new Image(getClass().getResourceAsStream("/Resources/textures/MainScreen.png"));
+        Image bgImage = new Image(getClass().getResourceAsStream("/Resources/textures/Main/MainScreen.png"));
         ImageView bgView = new ImageView(bgImage);
         bgView.setPreserveRatio(false);
         menuBox = new VBox(12);

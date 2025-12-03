@@ -85,7 +85,7 @@ public class FieldVillage {
             FXGL.getGameScene().addUINode(root);
             showLoading(true);
 
-            boolean imageOk = loadBackgroundImage("/Resources/textures/fieldVillage.png");
+            boolean imageOk = loadBackgroundImage("/Resources/textures/fieldVillage/fieldVillage.png");
             boolean musicOk = startVillageMusic("/Resources/music/fieldVillage.mp3");
 
             positionHeroAtBottomCenter();

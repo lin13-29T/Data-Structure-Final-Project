@@ -35,13 +35,12 @@ import java.util.Queue;
 import java.util.Random;
 
 /**
- * CombatScreen completo con:
- * - constructor: CombatScreen(Game game, String bgPath, List<String> monsterSpritePaths, Hero heroForIcon)
- * - toasts secuenciales (no modales)
- * - música de combate configurable vía setBattleMusicPath(...)
- * - Game Over centrado que detiene la música previa
- * - createDebugMonster adaptado a la firma solicitada
- * - indicador de vida del héroe en esquina que se actualiza en tiempo real
+ * CombatScreen completo con: - constructor: CombatScreen(Game game, String
+ * bgPath, List<String> monsterSpritePaths, Hero heroForIcon) - toasts
+ * secuenciales (no modales) - música de combate configurable vía
+ * setBattleMusicPath(...) - Game Over centrado que detiene la música previa -
+ * createDebugMonster adaptado a la firma solicitada - indicador de vida del
+ * héroe en esquina que se actualiza en tiempo real
  */
 public class CombatScreen {
 
@@ -89,10 +88,11 @@ public class CombatScreen {
     /**
      * Constructor principal.
      *
-     * @param game                instancia del juego (no nula según tu implementación)
-     * @param bgPath              ruta del fondo (ej: "/Resources/textures/battle_bg.png")
-     * @param monsterSpritePaths  lista de rutas de sprites para elegir aleatoriamente
-     * @param heroForIcon         héroe para usar su imagen en el icono (puede ser null)
+     * @param game instancia del juego (no nula según tu implementación)
+     * @param bgPath ruta del fondo (ej: "/Resources/textures/battle_bg.png")
+     * @param monsterSpritePaths lista de rutas de sprites para elegir
+     * aleatoriamente
+     * @param heroForIcon héroe para usar su imagen en el icono (puede ser null)
      */
     public CombatScreen(Game game, String bgPath, List<String> monsterSpritePaths, Hero heroForIcon) {
         this.game = game;
@@ -243,7 +243,7 @@ public class CombatScreen {
     }
 
     private String chooseRandomSprite(List<String> paths) {
-        String out = "/Resources/sprites/monster1.png";
+        String out = "/Resources/sprites/Monsters/monster1.png";
         if (paths != null && !paths.isEmpty()) {
             int idx = rnd.nextInt(paths.size());
             if (idx >= 0 && idx < paths.size()) {
@@ -292,7 +292,7 @@ public class CombatScreen {
         }
         if (img == null) {
             try {
-                img = new Image(getClass().getResourceAsStream("/Resources/sprites/monster1.png"));
+                img = new Image(getClass().getResourceAsStream("/Resources/sprites/Monsters/monster1.png"));
             } catch (Throwable ignored) {
             }
         }
@@ -418,7 +418,9 @@ public class CombatScreen {
             if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
                 ev.consume();
                 Button sel = buttons.get(selectedButtonIndex);
-                if (sel != null) sel.fire();
+                if (sel != null) {
+                    sel.fire();
+                }
                 return;
             }
 
@@ -429,17 +431,23 @@ public class CombatScreen {
             }
             if (code == KeyCode.DIGIT2 || code == KeyCode.NUMPAD2) {
                 ev.consume();
-                if (buttons.size() > 1) buttons.get(1).fire();
+                if (buttons.size() > 1) {
+                    buttons.get(1).fire();
+                }
                 return;
             }
             if (code == KeyCode.DIGIT3 || code == KeyCode.NUMPAD3) {
                 ev.consume();
-                if (buttons.size() > 2) buttons.get(2).fire();
+                if (buttons.size() > 2) {
+                    buttons.get(2).fire();
+                }
                 return;
             }
             if (code == KeyCode.DIGIT4 || code == KeyCode.NUMPAD4) {
                 ev.consume();
-                if (buttons.size() > 3) buttons.get(3).fire();
+                if (buttons.size() > 3) {
+                    buttons.get(3).fire();
+                }
                 return;
             }
 
@@ -566,7 +574,9 @@ public class CombatScreen {
                 FXGL.getGameScene().removeUINode(root);
             } catch (Throwable ignored) {
             }
-            if (onExit != null) onExit.run();
+            if (onExit != null) {
+                onExit.run();
+            }
         });
     }
 
@@ -594,7 +604,7 @@ public class CombatScreen {
 
             Image goImg = null;
             try {
-                goImg = new Image(getClass().getResourceAsStream("/Resources/textures/gameOver.png"));
+                goImg = new Image(getClass().getResourceAsStream("/Resources/textures/Main/gameOver.png"));
             } catch (Throwable ignored) {
             }
             ImageView goView = new ImageView(goImg);
@@ -715,6 +725,7 @@ public class CombatScreen {
 
     // --- ToastQueue: muestra labels temporales en orden, uno a la vez ---
     private class ToastQueue {
+
         private final Queue<String> q = new ArrayDeque<>();
         private boolean showing = false;
         private final double DURATION_SECONDS = 1.2;
@@ -751,7 +762,8 @@ public class CombatScreen {
                 if (root != null) {
                     root.getChildren().add(container);
                 }
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
 
             FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.seconds(FADE_SECONDS), lbl);
             fadeIn.setFromValue(0.0);
@@ -764,7 +776,10 @@ public class CombatScreen {
             fadeOut.setToValue(0.0);
 
             fadeOut.setOnFinished(ev -> {
-                try { root.getChildren().remove(container); } catch (Throwable ignored) {}
+                try {
+                    root.getChildren().remove(container);
+                } catch (Throwable ignored) {
+                }
                 Platform.runLater(this::showNext);
             });
 
