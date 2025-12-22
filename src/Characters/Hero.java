@@ -4,6 +4,7 @@ import Items.*;
 import Logic.Game;
 import cu.edu.cujae.ceis.tree.general.GeneralTree;
 import Misc.*;
+import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIterator;
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -22,7 +23,8 @@ public class Hero implements Serializable {
     private String name;
     private String spritePath;
     private transient Image fxImage;
-    private int velocidad;
+    private int expMax;
+    private int expActual;
     private int attack;
     private int magic;
     private int defense;
@@ -30,11 +32,9 @@ public class Hero implements Serializable {
     private int life;
     private int actualLife;
     private LinkedList<Item> items;
-    private LinkedList<Weapon> weapons;
     private Weapon actualWeapon;
     private Armor armor;
     private GeneralTree<Classes> unlockedClasses;
-    private Classes actualClass;
     private Queue<Task> tasks;
     private Deque<Task> completedTasks;
 
@@ -51,16 +51,39 @@ public class Hero implements Serializable {
         setMagic(20);
         setDefense(4);
         setLevel(1);
-        setVelocidad(10);
+        setExpMax(100);
+        setExpActual(0);
         setArmor(armor);
         items = new LinkedList<>();
-        weapons = new LinkedList<>();
         actualWeapon = weapon;
         unlockedClasses = new GeneralTree<>();
-        this.actualClass = null;
         tasks = new ArrayDeque<>();
         completedTasks = new ArrayDeque<>();
         loadFxImage();
+    }
+    
+    public boolean searchSkillTree(Classes c){
+boolean found = false;       
+// InBreadthIterator<Classes> it = new InBreadthIterator<>();
+// while(it.hasNext() && !found)    
+return found;
+    }
+    
+
+    public int getExpMax() {
+        return expMax;
+    }
+
+    public void setExpMax(int expMax) {
+        this.expMax = expMax;
+    }
+
+    public int getExpActual() {
+        return expActual;
+    }
+
+    public void setExpActual(int expActual) {
+        this.expActual = expActual;
     }
 
     public Location getLastLocation() {
@@ -91,8 +114,13 @@ public class Hero implements Serializable {
         return armor;
     }
 
-    public void setArmor(Armor armor) {
-        this.armor = armor;
+    public boolean setArmor(Armor armor) {
+        boolean done = false;
+        if (armor != null) {
+            this.armor = armor;
+            done = true;
+        }
+        return done;
     }
 
     public GeneralTree<Classes> getUnlockedClasses() {
@@ -101,14 +129,6 @@ public class Hero implements Serializable {
 
     public void setUnlockedClasses(GeneralTree<Classes> unlockedClasses) {
         this.unlockedClasses = unlockedClasses;
-    }
-
-    public Classes getActualClass() {
-        return actualClass;
-    }
-
-    public void setActualClass(Classes actualClass) {
-        this.actualClass = actualClass;
     }
 
     public int getLife() {
@@ -141,18 +161,6 @@ public class Hero implements Serializable {
             } catch (Throwable ignored) {
                 fxImage = null;
             }
-        }
-    }
-
-    public int getVelocidad() {
-        return velocidad;
-    }
-
-    public void setVelocidad(int velocidad) {
-        if (velocidad >= 1) {
-            this.velocidad = velocidad;
-        } else {
-            throw new IllegalArgumentException("Debe ser mayor que 0");
         }
     }
 
@@ -239,14 +247,6 @@ public class Hero implements Serializable {
 
     public void setItems(LinkedList<Item> items) {
         this.items = items;
-    }
-
-    public LinkedList<Weapon> getWeapons() {
-        return weapons;
-    }
-
-    public void setWeapons(LinkedList<Weapon> weapons) {
-        this.weapons = weapons;
     }
 
     public Weapon getActualWeapon() {

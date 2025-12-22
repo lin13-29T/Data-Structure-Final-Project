@@ -164,23 +164,7 @@ public class Game {
 
     public boolean equipWeapon(Weapon w) {
         boolean equiped = false;
-        if (w instanceof Sword) {
-            if (hero.getActualClass().getClass().getSimpleName().equalsIgnoreCase("SwordsmanClass")
-                    || hero.getActualClass().getClass().getSimpleName().equalsIgnoreCase("ClaymoreUserClass")
-                    || hero.getActualClass().getClass().getSimpleName().equalsIgnoreCase("SaberUserClass")) {
-                equiped = true;
-            } else if (w instanceof Claymore) {
-                if (hero.getActualClass().getClass().getSimpleName().equalsIgnoreCase("ClaymoreUserClass")) {
-                    equiped = true;
-                } else if (w instanceof Saber) {
-                    if (hero.getActualClass().getClass().getSimpleName().equalsIgnoreCase("SaberUserClass")) {
-                        equiped = true;
-                    }
-
-                    return equiped;
-                }
-            }
-        }
+        String skill = null;
         return equiped;
     }
 
