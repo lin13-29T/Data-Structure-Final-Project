@@ -26,23 +26,25 @@ import javafx.scene.text.Font;
 import javafx.util.Duration;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import javafx.application.Platform;
 
 /**
- * InventoryScreen completo:
- *  - conserva todas las pestañas y métodos que tenías
- *  - recibe una referencia a la pantalla que lo abrió (GameMapScreen o FieldVillage u otro)
- *  - pausa todas las pistas registradas al abrirse (AudioManager.pauseAll())
- *  - reanuda las pistas al cerrarse (AudioManager.resumeAll())
- *  - bloquea inputs a la UI subyacente mientras está abierto
- *  - guarda la posición del héroe usando getHeroMapTopLeft() si la pantalla provee ese método
+ * InventoryScreen completo: - conserva todas las pestañas y métodos que tenías
+ * - recibe una referencia a la pantalla que lo abrió (GameMapScreen o
+ * FieldVillage u otro) - pausa todas las pistas registradas al abrirse
+ * (AudioManager.pauseAll()) - reanuda las pistas al cerrarse
+ * (AudioManager.resumeAll()) - bloquea inputs a la UI subyacente mientras está
+ * abierto - guarda la posición del héroe usando getHeroMapTopLeft() si la
+ * pantalla provee ese método
  *
- * Nota: este fichero asume que existe GUI.AudioManager con métodos pauseAll(), resumeAll(), stopAll().
+ * Nota: este fichero asume que existe GUI.AudioManager con métodos pauseAll(),
+ * resumeAll(), stopAll().
  */
 public class InventoryScreen {
 
     private final Game game;
     private final Object mapScreen; // puede ser GameMapScreen, FieldVillage u otro proveedor
-    private final StackPane root;
+    private StackPane root = null;
     private final TabPane tabPane;
     private Runnable onClose;
     private boolean isVisible = false;
@@ -59,9 +61,10 @@ public class InventoryScreen {
     /**
      * Constructor.
      *
-     * @param game       instancia del juego (no null)
-     * @param mapScreen  pantalla que abre el inventario (puede ser null). Debe exponer
-     *                   public Point2D getHeroMapTopLeft() si quieres que el inventario guarde la posición.
+     * @param game instancia del juego (no null)
+     * @param mapScreen pantalla que abre el inventario (puede ser null). Debe
+     * exponer public Point2D getHeroMapTopLeft() si quieres que el inventario
+     * guarde la posición.
      */
     public InventoryScreen(Game game, Object mapScreen) {
         this.game = game;
@@ -153,7 +156,6 @@ public class InventoryScreen {
     }
 
     // ---------------- UI tabs (implementaciones completas, conservadas) ----------------
-
     private Tab createStatusTab() {
         Tab tab = new Tab("Status");
         tab.setStyle("-fx-font-weight: bold;");
@@ -366,8 +368,8 @@ public class InventoryScreen {
             for (Weapon w : game.getHeroWeapons()) {
                 HBox weaponRow = createItemRow(w.getName(),
                         "Attack: " + w.getAttack()
-                                + " | Durability: " + w.getLifeSpan()
-                                + (w == hero.getActualWeapon() ? " (EQUIPPED)" : ""),
+                        + " | Durability: " + w.getLifeSpan()
+                        + (w == hero.getActualWeapon() ? " (EQUIPPED)" : ""),
                         w == hero.getActualWeapon());
                 weaponsList.getChildren().add(weaponRow);
             }
@@ -383,7 +385,7 @@ public class InventoryScreen {
         if (armor != null) {
             HBox armorRow = createItemRow(armor.getName(),
                     "Defense: " + armor.getDefense()
-                            + " | Effect: " + armor.getEffect(),
+                    + " | Effect: " + armor.getEffect(),
                     true);
             armorRow.setStyle("-fx-background-color: rgba(68, 170, 255, 0.1); -fx-background-radius: 5;");
             armorList.getChildren().add(armorRow);
@@ -430,7 +432,7 @@ public class InventoryScreen {
                 Wares ware = (Wares) item;
                 HBox wareRow = createItemRow(ware.getName(),
                         "Healing: " + ware.getHealing()
-                                + " | ID: " + ware.getId(),
+                        + " | ID: " + ware.getId(),
                         false);
                 wareRow.setStyle("-fx-background-color: rgba(68, 255, 68, 0.1); -fx-background-radius: 5;");
                 waresList.getChildren().add(wareRow);
@@ -539,7 +541,7 @@ public class InventoryScreen {
         Slider volumeSlider = new Slider(0, 100, Math.round(MainScreen.getVolumeSetting() * 100));
         volumeSlider.setPrefWidth(200);
         volumeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-         //   MainScreen.setVolumeSetting(newVal.doubleValue() / 100.0);
+            //   MainScreen.setVolumeSetting(newVal.doubleValue() / 100.0);
         });
 
         Label volumeValue = new Label(Math.round(volumeSlider.getValue()) + "%");
@@ -566,23 +568,47 @@ public class InventoryScreen {
                 + "-fx-background-radius: 8; -fx-effect: dropshadow(gaussian, #333, 5, 0, 0, 2); "
                 + "-fx-cursor: hand;");
         exitButton.setOnAction(e -> {
-            // 1. Cerrar el inventario UI
+            // 1. Quitar filtros globales del inventario si están instalados
+            try {
+                Parent currentRoot = FXGL.getGameScene().getRoot();
+                if (sceneRootRef != null) {
+                    try {
+                        sceneRootRef.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    } catch (Throwable ignored) {
+                    }
+                    try {
+                        sceneRootRef.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    } catch (Throwable ignored) {
+                    }
+                }
+                if (currentRoot != null && currentRoot != sceneRootRef) {
+                    try {
+                        currentRoot.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    } catch (Throwable ignored) {
+                    }
+                    try {
+                        currentRoot.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    } catch (Throwable ignored) {
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+
+            // 2. Cerrar el inventario UI si está presente
             try {
                 FXGL.getGameScene().removeUINode(root);
             } catch (Throwable ignored) {
             }
 
-            // 2. Intentar detener la música del mapa si existe
+            // 3. Intentar detener la música del mapa si existe (invocación segura por reflexión)
             try {
                 if (mapScreen != null) {
-                    // intentar invocar stopMapMusic() si existe
                     try {
-                        Method m = mapScreen.getClass().getMethod("stopMapMusic");
+                        java.lang.reflect.Method m = mapScreen.getClass().getMethod("stopMapMusic");
                         m.invoke(mapScreen);
                     } catch (NoSuchMethodException nsme) {
-                        // no hay stopMapMusic, intentar stopVillageMusic
                         try {
-                            Method mv = mapScreen.getClass().getMethod("stopVillageMusic");
+                            java.lang.reflect.Method mv = mapScreen.getClass().getMethod("stopVillageMusic");
                             mv.invoke(mapScreen);
                         } catch (Throwable ignored2) {
                         }
@@ -592,13 +618,13 @@ public class InventoryScreen {
             } catch (Throwable ignored) {
             }
 
-            // 3. Detener y limpiar toda la música registrada (AudioManager)
+            // 4. Detener y limpiar toda la música registrada (AudioManager)
             try {
                 AudioManager.stopAll();
             } catch (Throwable ignored) {
             }
 
-            // 4. Limpiar UI y restaurar menú y música principal
+            // 5. Limpiar UI y restaurar menú y música principal
             try {
                 FXGL.getGameScene().clearUINodes();
             } catch (Throwable ignored) {
@@ -698,12 +724,6 @@ public class InventoryScreen {
         this.onClose = onClose;
     }
 
-    /**
-     * Muestra el inventario:
-     *  - añade la UI
-     *  - pausa todas las pistas registradas
-     *  - instala filtros globales para bloquear inputs a la UI subyacente
-     */
     public void show() {
         isVisible = true;
 
@@ -718,8 +738,10 @@ public class InventoryScreen {
 
         // Instalar filtros globales para bloquear inputs a la UI subyacente
         try {
+            // obtener referencia actual del root de la escena (si cambia, siempre usamos el actual)
             sceneRootRef = FXGL.getGameScene().getRoot();
             if (sceneRootRef != null) {
+                // crear filtros si no existen
                 sceneKeyFilter = ev -> {
                     Object tgt = ev.getTarget();
                     if (tgt instanceof Node) {
@@ -736,6 +758,8 @@ public class InventoryScreen {
                         }
                     }
                 };
+
+                // registrar en el root actual
                 sceneRootRef.addEventFilter(KeyEvent.ANY, sceneKeyFilter);
                 sceneRootRef.addEventFilter(MouseEvent.ANY, sceneMouseFilter);
             }
@@ -746,13 +770,97 @@ public class InventoryScreen {
         javafx.application.Platform.runLater(() -> root.requestFocus());
     }
 
-    /**
-     * Cierra el inventario:
-     *  - quita la UI
-     *  - quita filtros globales
-     *  - reanuda las pistas registradas
-     */
     public void close() {
+        isVisible = false;
+
+        // Quitar filtros globales de forma robusta: intentar en el root guardado y en el root actual
+        try {
+            Parent currentRoot = FXGL.getGameScene().getRoot();
+            if (sceneRootRef != null) {
+                try {
+                    if (sceneKeyFilter != null) {
+                        sceneRootRef.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    }
+                } catch (Throwable ignored) {
+                }
+                try {
+                    if (sceneMouseFilter != null) {
+                        sceneRootRef.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+            // además intentar quitar del root actual por si cambió
+            if (currentRoot != null && currentRoot != sceneRootRef) {
+                try {
+                    if (sceneKeyFilter != null) {
+                        currentRoot.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    }
+                } catch (Throwable ignored) {
+                }
+                try {
+                    if (sceneMouseFilter != null) {
+                        currentRoot.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            sceneKeyFilter = null;
+            sceneMouseFilter = null;
+            sceneRootRef = null;
+        }
+
+        // Quitar UI
+        try {
+            FXGL.getGameScene().removeUINode(root);
+        } catch (Throwable ignored) {
+        }
+
+        // Reanudar todas las músicas registradas
+        try {
+            AudioManager.resumeAll();
+        } catch (Throwable ignored) {
+        }
+
+        // Asegurar que la pantalla que abrió el inventario recupere foco y entrada.
+        try {
+            if (mapScreen != null) {
+                // intentar dar foco al root del mapScreen si tiene método requestFocus o getRoot
+                try {
+                    // si tiene getRoot() que devuelva Parent
+                    java.lang.reflect.Method m = mapScreen.getClass().getMethod("getRoot");
+                    Object r = m.invoke(mapScreen);
+                    if (r instanceof Node) {
+                        Platform.runLater(() -> ((Node) r).requestFocus());
+                    }
+                } catch (NoSuchMethodException nsme) {
+                    // si no tiene getRoot, intentar setHeroPosition o requestFocus directo
+                    try {
+                        java.lang.reflect.Method m2 = mapScreen.getClass().getMethod("requestFocus");
+                        m2.invoke(mapScreen);
+                    } catch (Throwable ignored) {
+                    }
+                } catch (Throwable ignored) {
+                }
+            } else {
+                // fallback: pedir foco al scene root
+                Parent sceneRoot = FXGL.getGameScene().getRoot();
+                if (sceneRoot != null) {
+                    Platform.runLater(() -> sceneRoot.requestFocus());
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+
+        // Ejecutar callback onClose si existe (por ejemplo para reanudar mover)
+        if (onClose != null) {
+            onClose.run();
+        }
+    }
+
+    {
         isVisible = false;
 
         // Quitar filtros globales
@@ -806,7 +914,6 @@ public class InventoryScreen {
     }
 
     // ---------------- Helpers ----------------
-
     private Label createTitleLabel(String text) {
         Label label = new Label(text);
         label.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #aaddff;");
@@ -841,12 +948,10 @@ public class InventoryScreen {
         return sb.toString();
     }
 
-    /**
-     * Intenta obtener Point2D llamando al método público getHeroMapTopLeft() del proveedor (mapScreen).
-     * Devuelve null si no existe o falla.
-     */
     private Point2D tryGetHeroTopLeftFromProvider() {
-        if (mapScreen == null) return null;
+        if (mapScreen == null) {
+            return null;
+        }
         try {
             Method m = mapScreen.getClass().getMethod("getHeroMapTopLeft");
             Object res = m.invoke(mapScreen);
@@ -858,14 +963,15 @@ public class InventoryScreen {
         return null;
     }
 
-    /**
-     * Comprueba si el nodo objetivo pertenece al árbol del inventario (root).
-     */
     private boolean isNodeDescendantOfRoot(Node node) {
-        if (node == null) return false;
+        if (node == null) {
+            return false;
+        }
         Node cur = node;
         while (cur != null) {
-            if (cur == root) return true;
+            if (cur == root) {
+                return true;
+            }
             cur = cur.getParent();
         }
         return false;
