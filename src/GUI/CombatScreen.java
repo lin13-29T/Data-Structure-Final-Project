@@ -223,8 +223,8 @@ public class CombatScreen {
                     if (((Monster) n).getEncounter().equalsIgnoreCase(encounter)) {
                         if (rnd.nextInt(0, 10) == 7) {
                             Monster t = (Monster) n;
-                            m = new Monster(t.getActualWeapon(), t.getAttack(), t.getMagic(), t.getDefense(), t.getVelocidad(), t.getLevel(), t.getName(),
-                                    t.getSpritePath(), t.getLife(), t.getActualLife(), t.getExp(), t.getEncounter());
+                            m = new Monster(t.getActualWeapon(), t.getAttack(), t.getDefense(), t.getName(),
+                                    t.getSpritePath(), t.getLife(), t.getActualLife(), t.getExp(),t.getMoney(), t.getEncounter());
                             found = true;
                         }
                     }
@@ -373,6 +373,7 @@ public class CombatScreen {
                 }
                 return;
             }
+            
 
             if (code == KeyCode.DIGIT1 || code == KeyCode.NUMPAD1) {
                 ev.consume();
@@ -400,11 +401,7 @@ public class CombatScreen {
                 }
                 return;
             }
-
-            if (code == KeyCode.ESCAPE) {
-                ev.consume();
-                closeCombatAndReturnToMap();
-            }
+          
         });
     }
 
@@ -457,6 +454,7 @@ public class CombatScreen {
         boolean removedOne = false;
         if (!endCombatNow && target != null && game.checkGameOver(target.getActualLife())) {
             game.getHero().sumExp(target.getExp());
+            game.getHero().setMoney( game.getHero().getMoney()+target.getMoney());
             removeMonster(target);
             removedOne = true;
         }

@@ -33,6 +33,7 @@ public class Hero implements Serializable {
     private int level;
     private int life;
     private int actualLife;
+    private int money;
     private LinkedList<Item> items;
     private Weapon actualWeapon;
     private Armor armor;
@@ -49,19 +50,28 @@ public class Hero implements Serializable {
         setLife(100);
         setActualLife(100);
         setSpritePath("/Resources/sprites/hero.png");
-        setAttack(5);
+        setAttack(7);
         setMagic(20);
-        setDefense(4);
+        setDefense(6);
         setLevel(1);
         setExpMax(100);
         setExpActual(0);
         setArmor(armor);
+        setMoney(50);
         items = new LinkedList<>();
         actualWeapon = weapon;
         unlockedClasses = new GeneralTree<>();
         tasks = new ArrayDeque<>();
         completedTasks = new ArrayDeque<>();
         loadFxImage();
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public void setMoney(int money) {
+        this.money = money;
     }
 
     public void sumExp(int exp) {

@@ -11,30 +11,35 @@ public class Monster extends NPC {
     protected int attack;
     protected int life;
     protected int actualLife;
-    protected int magic;
     protected int defense;
-    protected int velocidad;
     protected ArrayList<Item> loot;
-    protected int level;
     protected int exp;
     protected String encounter;
+    protected int money;
 
-    public Monster(Weapon actualWeapon, int attack, int magic, int defense, int velocidad, int level, String name, String sprite, int life, int actualLife,
-            int exp, String encounter) {
+    public Monster(Weapon actualWeapon, int attack,int defense, String name, String sprite, int life, int actualLife,
+            int exp,int money, String encounter) {
         super(name, sprite);
         setActualWeapon(actualWeapon);
         setAttack(attack);
-        setMagic(magic);
         setDefense(defense);
-        setVelocidad(velocidad);
-        setLevel(level);
         setActualLife(actualLife);
         setLife(life);
         this.loot = new ArrayList<>();
         setExp(exp);
         setEncounter(encounter);
+        setMoney(money);
     }
 
+    public int getMoney() {
+        return money;
+    }
+
+    public void setMoney(int money) {
+        this.money = money;
+    }
+
+    
     public String getEncounter() {
         return encounter;
     }
@@ -77,28 +82,12 @@ public class Monster extends NPC {
         this.actualWeapon = actualWeapon;
     }
 
-    public int getVelocidad() {
-        return velocidad;
-    }
-
-    public void setVelocidad(int velocidad) {
-        this.velocidad = velocidad;
-    }
-
     public int getAttack() {
         return attack;
     }
 
     public void setAttack(int attack) {
         this.attack = attack;
-    }
-
-    public int getMagic() {
-        return magic;
-    }
-
-    public void setMagic(int magic) {
-        this.magic = magic;
     }
 
     public int getDefense() {
@@ -115,14 +104,6 @@ public class Monster extends NPC {
 
     public void setLoot(ArrayList<Item> loot) {
         this.loot = loot;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public void setLevel(int level) {
-        this.level = level;
     }
 
     public ArrayList<String> getDialogue() {

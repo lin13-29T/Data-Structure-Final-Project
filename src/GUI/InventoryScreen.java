@@ -266,6 +266,15 @@ public class InventoryScreen {
         grid.getChildren().addAll(expTitle, expValue);
         rightRow++;
 
+        // Money
+        Label Money = createTitleLabel("Money:");
+        int money = hero.getMoney();
+        String ammount = String.valueOf(money);
+        Label MoneyAmmount = createValueLabel(ammount);
+        GridPane.setConstraints(Money, rightCol, rightRow);
+        GridPane.setConstraints(MoneyAmmount, rightCol + 1, rightRow);
+        grid.getChildren().addAll(Money, MoneyAmmount);
+        rightRow++;
         // Current Weapon
         Label weaponTitle = createTitleLabel("Weapon:");
         Weapon actualWeapon = hero.getActualWeapon();
