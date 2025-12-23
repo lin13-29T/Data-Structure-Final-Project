@@ -4,12 +4,14 @@ import Items.*;
 import Logic.Game;
 import cu.edu.cujae.ceis.tree.general.GeneralTree;
 import Misc.*;
+import cu.edu.cujae.ceis.tree.binary.BinaryTreeNode;
 import cu.edu.cujae.ceis.tree.iterators.general.InBreadthIterator;
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Random;
 import javafx.scene.image.Image;
 
 public class Hero implements Serializable {
@@ -61,14 +63,42 @@ public class Hero implements Serializable {
         completedTasks = new ArrayDeque<>();
         loadFxImage();
     }
-    
-    public boolean searchSkillTree(Classes c){
-boolean found = false;       
-// InBreadthIterator<Classes> it = new InBreadthIterator<>();
-// while(it.hasNext() && !found)    
-return found;
+
+    public void sumExp(int exp) {
+        setExpActual(expActual + exp);
     }
-    
+
+    public boolean levelUp() {
+        boolean levelUp = false;
+        if (expActual >= expMax) {
+            Random rnd = new Random();
+            int temp = expActual - expMax;
+
+            setExpActual(0 + temp);
+            setExpMax(expMax + 50);
+            levelUp = true;
+            level++;
+            setDefense(defense + rnd.nextInt(1, 5));
+            setLife(life + rnd.nextInt(1, 5));
+            setActualLife(life);
+            setAttack(attack + rnd.nextInt(1, 5));
+        }
+        return levelUp;
+    }
+
+    public boolean searchHeroSkillTreeNode(String nodeId) {
+        boolean found = false;
+        InBreadthIterator<Classes> it = unlockedClasses.inBreadthIterator();
+        while (it.hasNext() && !found) {
+            BinaryTreeNode<Classes> node = it.nextNode();
+            Classes cl = (Classes) node.getInfo();
+            if (cl.getId().equalsIgnoreCase(nodeId)) {
+                found = true;
+            }
+
+        }
+        return found;
+    }
 
     public int getExpMax() {
         return expMax;
