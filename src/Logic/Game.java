@@ -32,7 +32,7 @@ public class Game {
     }
 
     public void createHero(String name) {
-        hero = new Hero(name, (Weapon) items.get(0), (Armor) items.get(6));
+        hero = new Hero(name, (Weapon) items.get(0), (Armor) items.get(8));
     }
 
     public LocalDateTime getPlayedTime() {
@@ -164,7 +164,12 @@ public class Game {
 
     public boolean equipWeapon(Weapon w) {
         boolean equiped = false;
-        String skill = null;
+        boolean canEquip = hero.searchHeroSkillTreeNode(w.getType());
+        if (canEquip) {
+            equiped = true;
+            hero.getItems().addLast(hero.getActualWeapon());
+            hero.setActualWeapon(w);
+        }
         return equiped;
     }
 
@@ -274,47 +279,47 @@ public class Game {
     }
 
     public void createItems() {
-        items.add(new Fist("It punches.", "Bare Hands", "H000", 5, 120000, "Inflicts damage.",
-                "A"));
+        items.add(new Fist("Your hands, it is the easiest way to attack!", "Bare Hands", "H000", 5, 120000, "Inflicts damage."));
+        items.add(new Sword("Basic Sword made of old trees.", "Wooden Sword", "SW000", 9, 120000, "Hard but cuts"));
+        items.add(new Fist("Basic thrown magic with hands", "Basic Spell", "H001", 6, 10, "It can attack"));
         items.add(new Gun("It shoots.", "Desert Eagle", "GUN01", 20, 100, "Inflict damage.",
                 "A", 50.0));
-        items.add(new Sword("It cuts.", "Guardian Sword", "SW01", 30, 100, "Inflict damage.",
-                "A"));
-        items.add(new Spear("It drills.", "Guardian Spear", "SP01", 18, 100, "Inflict damage.",
-                "A"));
-        items.add(new Claymore("It cuts but longer.", "Royal Claymore", "CLY01", 100, 100, "Inflict damage", "A"));
+        items.add(new Sword("It cuts.", "Guardian Sword", "SW01", 30, 100, "Inflict damage."));
+        items.add(new Spear("It drills.", "Guardian Spear", "SP01", 18, 100, "Inflicts damage."));
+        items.add(new Claymore("An old weapon belonging to the royal guard of the kingdom.", "Royal Claymore", "CLY01", 100, 100, "Inflict damage"));
         items.add(new Wares("It cures.", "Healing Bandages", "WS01", 50));
-        items.add(new Armor("Basic Armor", "Broken Cloath", "A000", 2, "Pasen Polnito"));
+        items.add(new Armor("Basic Armor", "Broken Cloath", "A000", 3, "Offers extra Defense"));
     }
 
     public void createMonsters() {
-        characters.add(new Monster((Weapon) items.get(1), 5, 5, 5, 5, 3, "Gnome", null, 20, 20));
-        characters.add(new Monster((Weapon) items.get(2), 7, 3, 5, 7, 3, "Goblin", null, 20, 20));
-        characters.add(new Monster((Weapon) items.get(0), 5, 3, 10, 3, 3, "Mystical Crab", null, 20, 20));
+        characters.add(new Monster((Weapon) items.get(2), 2, 5, 1, 5, 3, "Gnome", "/Resources/sprites/Monsters/goblin01.png", 20, 20, 20, "Overworld"));
+        characters.add(new Monster((Weapon) items.get(1), 2, 3, 3, 7, 3, "Goblin", "/Resources/sprites/Monsters/elf01.png", 25, 20, 15, "Overworld"));
+        characters.add(new Monster((Weapon) items.get(0), 2, 3, 1, 3, 3, "Mystical Crab", "/Resources/sprites/Monsters/crab01.png", 20, 20, 12, "Overworld"));
+        // characters.add(new Monster(actualWeapon, ataque, magia, defensa, vel, nivel, name, sprite, vida, vidaactual, exp, encounter)name, sprite, 0, 0, 0, encounter))
     }
 
     public void createClassTree() {
 
         BinaryTreeNode<Classes> warrior = new BinaryTreeNode<>(
-                new WarriorClass("The basic class. Hits using fists.", true, true));
+                new WarriorClass("The basic class. Hits using fists and Hand to hand combat.", true, "fist"));
         BinaryTreeNode<Classes> swordman = new BinaryTreeNode<>(
-                new SwordmanClass("Hits using a sword. Can be upgraded to anothers blades.", false, false));
+                new SwordmanClass("Attacks using basic swords. Can be upgraded to anothers blades throug progression.", false, "sword"));
         BinaryTreeNode<Classes> spearman = new BinaryTreeNode<>(
-                new SpearClass("Hits using a spear. Can be upgraded to anothers spears-like.", false, false));
+                new SpearClass("Attacks using a spear. Can be upgraded to anothers spears-like weapons with progress.", false, "spear"));
         BinaryTreeNode<Classes> gunner = new BinaryTreeNode<>(
-                new GunnerClass("Hits using a gun. Can be upgraded to anothers fire weapons.", false, false));
+                new GunnerClass("Attacks using a gun. Can be upgraded to anothers fire weapons eventually.", false, "gun"));
         BinaryTreeNode<Classes> claymoreUser = new BinaryTreeNode<>(
-                new ClaymoreUserClass("Hits using a claymore.", false, false));
+                new ClaymoreUserClass("Hits using claymore-swords.", false, "claymore"));
         BinaryTreeNode<Classes> sabreUser = new BinaryTreeNode<>(
-                new SaberUserClass("Hits using a sabre.", false, false));
+                new SaberUserClass("Hits using a saber.", false, "saber"));
         BinaryTreeNode<Classes> rifleUser = new BinaryTreeNode<>(
-                new RifleUserClass("Hits using a rifle.", false, false));
+                new RifleUserClass("Hits using a rifle.", false, "rifle"));
         BinaryTreeNode<Classes> shotgunUser = new BinaryTreeNode<>(
-                new ShotgunUserClass("Hits using a shotgun.", false, false));
+                new ShotgunUserClass("Hits using a shotgun.", false, "shotgun"));
         BinaryTreeNode<Classes> halberdUser = new BinaryTreeNode<>(
-                new HalberdUserClass("Hits using a halberd.", false, false));
+                new HalberdUserClass("Hits using a halberd.", false, "halberd"));
         BinaryTreeNode<Classes> pikeUser = new BinaryTreeNode<>(
-                new PikeUserClass("Hits using a pike.", false, false));
+                new PikeUserClass("Hits using a pike.", false, "pike"));
 
         classes.setRoot(warrior);
 
