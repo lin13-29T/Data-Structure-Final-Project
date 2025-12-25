@@ -3,9 +3,8 @@ package Logic;
 import Items.*;
 import Characters.*;
 import Misc.*;
-import cu.edu.cujae.ceis.tree.general.GeneralTree;
+import Tree.*;
 import Utils.*;
-import cu.edu.cujae.ceis.tree.binary.BinaryTreeNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +31,15 @@ public class Game {
     }
 
     public void createHero(String name) {
-        hero = new Hero(name, (Weapon) items.get(0), (Armor) items.get(8));
+        BinaryTreeNode<Classes> root = (BinaryTreeNode<Classes>) classes.getRoot();
+        hero = new Hero(name, (Weapon) items.get(0), (Armor) items.get(8), root);
+        // Para testear el inventario 
+        hero.getItems().addLast(items.get(7));
+        hero.getItems().addLast(items.get(7));
+        hero.getItems().addLast(items.get(14));
+        hero.getItems().addLast(items.get(15));
+        hero.getItems().addLast(items.get(16));
+        hero.getItems().addLast(items.get(9));
     }
 
     public LocalDateTime getPlayedTime() {
@@ -146,22 +153,6 @@ public class Game {
         return names;
     }
 
-    public boolean equipItem(Item i) {
-        boolean equiped = false;
-        if (i instanceof Weapon) {
-            equiped = equipWeapon((Weapon) i);
-            if (equiped) {
-                hero.getItems().addLast(hero.getActualWeapon());
-                hero.setActualWeapon((Weapon) i);
-
-            }
-
-        } else if (i instanceof Armor) {
-            equiped = equipArmor((Armor) i);
-        }
-        return equiped;
-    }
-
     public boolean equipWeapon(Weapon w) {
         boolean equiped = false;
         boolean canEquip = hero.searchHeroSkillTreeNode(w.getType());
@@ -169,6 +160,7 @@ public class Game {
             equiped = true;
             hero.getItems().addLast(hero.getActualWeapon());
             hero.setActualWeapon(w);
+            hero.getItems().remove(w);
         }
         return equiped;
     }
@@ -176,6 +168,7 @@ public class Game {
     public boolean equipArmor(Armor a) {
         hero.getItems().addLast(hero.getArmor());
         boolean equiped = hero.setArmor(a);
+        hero.getItems().remove(a);
         return equiped;
     }
 
@@ -286,7 +279,7 @@ public class Game {
         items.add(new Gun("It shoots.", "Desert Eagle", "GUN01", 20, 100, "Inflict damage.",
                 "A", 50.0));
         items.add(new Sword("It cuts.", "Guardian Sword", "SW01", 30, 100, "Inflict damage."));
-        items.add(new Spear("It drills.", "Guardian Spear", "SP000", 18, 100, "Inflicts damage."));
+        items.add(new Spear("It drills.", "Guardian Spear", "SP000", 18, 100, "Inflicts damage.,"));
         items.add(new Claymore("An old weapon belonging to the royal guard of the kingdom.", "Royal Claymore", "CLY01", 100, 100, "Inflict damage"));
         items.add(new Wares("It cures.", "Healing Bandages", "WS01", 50));
         items.add(new Armor("Basic Armor", "Broken Cloath", "A000", 5, "Offers extra Defense"));
@@ -295,6 +288,8 @@ public class Game {
         items.add(new Spell("Dark magic spells", "Basic Spell", "H003", 6, 10, "It can attack launching shadow balls"));
         items.add(new Fist("Tentacles to constrict the enemy", "Tentacles", "H004", 14, 120000, "Inflicts damage by constriction."));
         items.add(new Spell("Fire throwing spell", "Flamethrower", "H005", 12, 15, "Inflicts damage by burning."));
+        items.add(new Armor("Basic Armor", "Adventurer´s Cloath", "A001", 9, "Worn by a misteryous adventurer that once saved the Kingdom."));
+        //    Weapon w = new Weapon(info, name, id, 0, 0, effect) 
         //Healing items
         items.add(new Wares("It cures.", "Ultra Potion", "P000", 75));
         items.add(new Wares("It cures.", "Sacred Potion", "P001", 100));
@@ -318,7 +313,7 @@ public class Game {
         characters.add(new Monster((Weapon) items.get(9), 15, 9, "Shadow Fiend", "/Resources/sprites/Monsters/swampMonster01.png", 87, 87, 70, 120, "Swamp"));
         characters.add(new Monster((Weapon) items.get(11), 14, 12, "Pot Fiend", "/Resources/sprites/Monsters/swampMonster04.png", 52, 52, 60, 125, "Swamp"));
         characters.add(new Monster((Weapon) items.get(9), 12, 7, "Toxic Lizard", "/Resources/sprites/Monsters/swampMonster03.png", 75, 75, 50, 100, "Swamp"));
-        characters.add(new Monster((Weapon) items.get(9), 32, 15, "Venom Demon King", "/Resources/sprites/Monsters/swampBoss01.png",280, 180, 200, 800, "SwampBoss"));
+        characters.add(new Monster((Weapon) items.get(9), 32, 15, "Venom Demon King", "/Resources/sprites/Monsters/swampBoss01.png", 280, 180, 200, 800, "SwampBoss"));
         //Volcano
         characters.add(new Monster((Weapon) items.get(13), 18, 10, "Salaflamender", "/Resources/sprites/Monsters/volcano00.png", 105, 105, 100, 150, "Volcano"));
         characters.add(new Monster((Weapon) items.get(9), 16, 13, "Dragon Egg", "/Resources/sprites/Monsters/volcano01.png", 110, 110, 95, 140, "Volcano"));
