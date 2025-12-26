@@ -109,7 +109,7 @@ public class MainScreen extends GameApplication {
         game = new Game();
         game.createItems();
         game.createMonsters();
- 
+
     }
 
     @Override
@@ -694,6 +694,23 @@ public class MainScreen extends GameApplication {
                             currentMapScreen.setHeroPosition(lx, ly);
                             currentMapScreen.show();
                         }
+                        case SWAMP -> {
+                            Swamp swamp = new Swamp(game);
+                            swamp.showWithLoading(() -> {
+                                Platform.runLater(() -> swamp.setHeroPosition(lx, ly));
+                            }, () -> {
+                                Platform.runLater(() -> {
+                                    currentMapScreen.show();
+                                    if (h.getLastLocation() == Hero.Location.MAP) {
+                                        currentMapScreen.setHeroPosition(h.getLastPosX(), h.getLastPosY());
+                                    } else {
+                                        currentMapScreen.resetHeroToCenter();
+                                    }
+                                    currentMapScreen.drawDebugObstacles();
+                                });
+                            });
+                        }
+                        
                         default -> {
                             currentMapScreen.resetHeroToCenter();
                             currentMapScreen.show();

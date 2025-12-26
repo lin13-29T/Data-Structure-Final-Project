@@ -2,6 +2,7 @@ package GUI;
 
 import Runner.MainScreen;
 import Characters.Hero;
+import GUI.Swamp;
 import Logic.Game;
 import com.almasb.fxgl.dsl.FXGL;
 import javafx.animation.AnimationTimer;
@@ -317,6 +318,8 @@ public class GameMapScreen {
                 left = true;
             } else if (k == KeyCode.D || k == KeyCode.RIGHT) {
                 right = true;
+            } else if (k == KeyCode.L) {
+                enterDebugSwamp();
             }
 
             if (handled) {
@@ -862,6 +865,39 @@ public class GameMapScreen {
             });
             a.showAndWait();
         }
+    }
+
+    private void enterDebugSwamp() {
+        final Point2D savedHeroTopLeft = getHeroMapTopLeft();
+
+        clearInputState();
+
+        stopMapMusic();
+        try {
+            FXGL.getGameScene().removeUINode(root);
+        } catch (Throwable ignored) {
+        }
+
+        Swamp swamp = new Swamp(game);
+        swamp.showWithLoading(null, () -> {
+            Platform.runLater(() -> {
+                MainScreen.hideMenu();
+                startMapMusic();
+                try {
+                    FXGL.getGameScene().addUINode(root);
+                } catch (Throwable ignored) {
+                }
+                heroView.setLayoutX(savedHeroTopLeft.getX());
+                heroView.setLayoutY(savedHeroTopLeft.getY());
+                if (debugEnabled) {
+                    drawDebugObstacles();
+                }
+                root.requestFocus();
+                clearInputState();
+                mover.start();
+            });
+        });
+
     }
 
     public void setHeroPosition(double x, double y) {

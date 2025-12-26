@@ -486,6 +486,8 @@ public class InventoryScreen {
                             h.setLastLocation(Hero.Location.MAP);
                         case "ForestHouse" ->
                             h.setLastLocation(Hero.Location.FOREST_HOUSE);
+                        case "Swamp" ->
+                            h.setLastLocation(Hero.Location.SWAMP);
                         default ->
                             h.setLastLocation(Hero.Location.MAP);
                     }
