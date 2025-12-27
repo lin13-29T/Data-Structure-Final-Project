@@ -261,10 +261,11 @@ public class Swamp {
     }
 
     private boolean startVillageMusic(String path) {
+        boolean startMusic = true;
         try {
             URL res = getClass().getResource(path);
             if (res == null) {
-                return false;
+                startMusic = false;
             }
             Media media = new Media(res.toExternalForm());
             stopVillageMusic();
@@ -272,10 +273,10 @@ public class Swamp {
             music.setCycleCount(MediaPlayer.INDEFINITE);
             music.setVolume(MainScreen.getVolumeSetting());
             music.play();
-            return true;
         } catch (Throwable t) {
-            return false;
+            startMusic = false;
         }
+        return startMusic;
     }
 
     private ImageView createHeroView() {
@@ -1214,7 +1215,7 @@ public class Swamp {
     // ---------------- movimiento y entradas ----------------
     private void positionHeroAtEntrance() {
         double startX = 2352.0;
-        double startY = 607.059; // tu coordenada inicial
+        double startY = 607.059;
 
         heroView.setLayoutX(startX);
         heroView.setLayoutY(startY);
@@ -1285,9 +1286,9 @@ public class Swamp {
                 }
             }
             if (k == KeyCode.ENTER) {
-                checkDungeonTriggers();
-                if (!beforeDungeon) {
-                } else {
+                if (beforeDungeon) {
+                    checkDungeonTriggers();
+
                     if (onStartRect) {
                         clearInputState();
                         try {
@@ -1303,6 +1304,7 @@ public class Swamp {
                             }
                         } catch (Throwable ignored) {
                         }
+
                         if (onExitCallback != null) {
                             hide();
                             onExitCallback.run();
@@ -1310,8 +1312,9 @@ public class Swamp {
                             hide();
                         }
                     }
+                } else {
+                    checkReturnToPreviousZone();
                 }
-                ev.consume();
             }
             ev.consume();
         });
@@ -1354,7 +1357,6 @@ public class Swamp {
         } catch (Throwable ignored) {
         }
 
-        // Pasar referencia para que InventoryScreen pueda guardar la posición y reanudar foco
         inventory = new InventoryScreen(game, this);
 
         inventory.setOnClose(() -> {
@@ -1446,7 +1448,6 @@ public class Swamp {
         for (Swamp.Obstacle ob : obstacles) {
             if (heroRect.intersects(ob.collisionRect)) {
                 collision = true;
-                break;
             }
         }
 
@@ -1616,7 +1617,6 @@ public class Swamp {
         GUI.CombatScreen cs = new GUI.CombatScreen(game, bg, "Swamp", game.getHero());
 
         cs.setBattleMusicPath("/Resources/music/bossBattle2.mp3");
-        //cs.setBattleMusicPath("/Resources/music/bossBattle2.mp3");
 
         cs.setOnExit(() -> {
             Platform.runLater(() -> {
@@ -1734,11 +1734,78 @@ public class Swamp {
 
             boolean bgOk = loadBackgroundImage("/Resources/textures/SwampDungeon/dungeonOutside.png");
             setHeroPosition(1104.0, 523.9160459999985);
+
             if (!world.getChildren().contains(heroView)) {
                 world.getChildren().add(heroView);
             }
             heroView.toFront();
+            createReturnTriggerRect();
+
             updateCamera();
+        }
+    }
+
+    private void createReturnTriggerRect() {
+        Rectangle2D exitRect = new Rectangle2D(1104.0, 428.0, 40, 220);
+        Rectangle r = new Rectangle(
+                exitRect.getMinX(), exitRect.getMinY(),
+                exitRect.getWidth(), exitRect.getHeight()
+        );
+        r.setFill(Color.color(0, 0, 0, 0.0));
+        r.setStroke(null);
+        r.setMouseTransparent(true);
+        r.getProperties().put("tag", "return_trigger");
+        r.getProperties().put("id", "dungeonReturn");
+
+        dungeonTriggerRects.add(r);
+        if (!world.getChildren().contains(r)) {
+            world.getChildren().add(r);
+        }
+        heroView.toFront();
+    }
+
+    private void returnToPreviousZone() {
+        boolean imageOk = loadBackgroundImage("/Resources/textures/SwampDungeon/swampOutside.png");
+        if (imageOk) {
+
+            beforeDungeon = true;
+
+            setHeroPosition(0.0, 624.2509439999992);
+
+            obstacles.clear();
+            populateSwampObstacles();
+            createDungeonTriggerRects();
+
+            createStartRectAtHeroStart();
+
+            heroView.toFront();
+            updateCamera();
+        }
+    }
+
+    private void checkReturnToPreviousZone() {
+        double hx = heroView.getLayoutX();
+        double hy = heroView.getLayoutY();
+        Rectangle2D heroRect = new Rectangle2D(hx, hy, HERO_W, HERO_H);
+
+        boolean found = false;
+        Rectangle foundTrigger = null;
+
+        for (Rectangle trigger : dungeonTriggerRects) {
+            Object tag = trigger.getProperties().get("tag");
+            if (!"return_trigger".equals(tag)) {
+            } else {
+                Rectangle2D tr = new Rectangle2D(trigger.getX(), trigger.getY(), trigger.getWidth(), trigger.getHeight());
+                if (heroRect.intersects(tr)) {
+                    found = true;
+                    foundTrigger = trigger;
+                }
+            }
+
+        }
+
+        if (found && foundTrigger != null) {
+            returnToPreviousZone();
         }
     }
 
