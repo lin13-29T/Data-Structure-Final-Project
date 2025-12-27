@@ -1293,7 +1293,7 @@ public class Swamp {
                         try {
                             if (game != null && game.getHero() != null) {
                                 Hero h = game.getHero();
-                                h.setLastLocation(Hero.Location.SWAMP); 
+                                h.setLastLocation(Hero.Location.SWAMP);
                                 h.setLastPosX(heroView.getLayoutX());
                                 h.setLastPosY(heroView.getLayoutY());
                                 try {
@@ -1733,6 +1733,7 @@ public class Swamp {
             }
 
             boolean bgOk = loadBackgroundImage("/Resources/textures/SwampDungeon/dungeonOutside.png");
+            setHeroPosition(1104.0, 523.9160459999985);
             if (!world.getChildren().contains(heroView)) {
                 world.getChildren().add(heroView);
             }
