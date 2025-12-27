@@ -63,7 +63,7 @@ public class Swamp {
 
     // Sistema de colisiones
     private final List<Obstacle> obstacles = new ArrayList<>();
-    private boolean debugEnabled = true;
+    private boolean debugEnabled = false;
 
     // Inventario (si se abre desde aquí se pasa this)
     private InventoryScreen inventory;
