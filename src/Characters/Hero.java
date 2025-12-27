@@ -17,7 +17,7 @@ public class Hero implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public enum Location {
-        MAP, FIELD_VILLAGE, FOREST_HOUSE,SWAMP, UNKNOWN
+        MAP, FIELD_VILLAGE, FOREST_HOUSE,SWAMP, SWAMP_DUNGEON,UNKNOWN
     }
 
     private String name;
