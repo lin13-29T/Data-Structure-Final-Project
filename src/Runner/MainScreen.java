@@ -1,6 +1,7 @@
 package Runner;
 
 import Characters.Hero;
+import static Characters.Hero.Location.SWAMP;
 import Logic.Game;
 import GUI.*;
 import com.almasb.fxgl.app.GameApplication;
@@ -676,13 +677,15 @@ public class MainScreen extends GameApplication {
                         }
                         case FOREST_HOUSE -> {
                             ForestHouse fh = new ForestHouse(game);
+                            double startX = 384.0;
+                            double startY = 576.0;
                             fh.showWithLoading(() -> {
                                 Platform.runLater(() -> fh.setHeroPosition(lx, ly));
                             }, () -> {
                                 Platform.runLater(() -> {
                                     currentMapScreen.show();
                                     if (h.getLastLocation() == Hero.Location.MAP) {
-                                        currentMapScreen.setHeroPosition(h.getLastPosX(), h.getLastPosY());
+                                        currentMapScreen.setHeroPosition(startX, startY);
                                     } else {
                                         currentMapScreen.resetHeroToCenter();
                                     }
@@ -696,8 +699,10 @@ public class MainScreen extends GameApplication {
                         }
                         case SWAMP -> {
                             Swamp swamp = new Swamp(game);
+                            double startX = 2352.0;
+                            double startY = 607.059;
                             swamp.showWithLoading(() -> {
-                                Platform.runLater(() -> swamp.setHeroPosition(lx, ly));
+                                Platform.runLater(() -> swamp.setHeroPosition(startX, startY));
                             }, () -> {
                                 Platform.runLater(() -> {
                                     currentMapScreen.show();
@@ -710,7 +715,25 @@ public class MainScreen extends GameApplication {
                                 });
                             });
                         }
-                        
+                        case SWAMP_DUNGEON -> {
+                            SwampDungeon swamp = new SwampDungeon(game);
+                            double startX = 500.1253860000012;
+                            double startY = 1200.0;
+                            swamp.showWithLoading(() -> {
+                                Platform.runLater(() -> swamp.setHeroPosition(startX, startY));
+                            }, () -> {
+                                Platform.runLater(() -> {
+                                    currentMapScreen.show();
+                                    if (h.getLastLocation() == Hero.Location.MAP) {
+                                        currentMapScreen.setHeroPosition(h.getLastPosX(), h.getLastPosY());
+                                    } else {
+                                        currentMapScreen.resetHeroToCenter();
+                                    }
+                                    currentMapScreen.drawDebugObstacles();
+                                });
+                            });
+                        }
+
                         default -> {
                             currentMapScreen.resetHeroToCenter();
                             currentMapScreen.show();
