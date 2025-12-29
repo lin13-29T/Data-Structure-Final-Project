@@ -110,6 +110,7 @@ public class MainScreen extends GameApplication {
         game = new Game();
         game.createItems();
         game.createMonsters();
+        game.createTasks();
 
     }
 
@@ -660,6 +661,8 @@ public class MainScreen extends GameApplication {
 
                     switch (loc) {
                         case FIELD_VILLAGE -> {
+                            double x = 665.5536599999996;
+                            double y = 864.0;
                             FieldVillage field = new FieldVillage(game);
                             field.showWithLoading(() -> {
                                 Platform.runLater(() -> field.setHeroPosition(lx, ly));
