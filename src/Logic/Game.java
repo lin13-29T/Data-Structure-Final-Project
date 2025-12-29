@@ -203,6 +203,16 @@ public class Game {
         return wares;
     }
 
+    public ArrayList<KeyItem> getHeroKeyItems() {
+        ArrayList<KeyItem> kItems = new ArrayList<>();
+        for (Item i : hero.getItems()) {
+            if (i instanceof KeyItem) {
+                kItems.add((KeyItem) i);
+            }
+        }
+        return kItems;
+    }
+
     public ArrayList<Armor> getHeroArmors() {
         ArrayList<Armor> armors = new ArrayList<>();
         for (Item i : hero.getItems()) {
@@ -469,6 +479,7 @@ public class Game {
         //Main Quests
         addTasks(new Task("Explore the Misterious Sky Ruins.", "Search what is hidden in the Sky Island.", "M000", 10000, true));
         addTasks(new Task("Search the Toxic Orb.", "Complete the road of Swamp.", "M001", 1000, true));
+        getTasks().get(1).addReward(getItems().get(19));
         addTasks(new Task("Search the Lava Orb.", "Complete the road of Volcano.", "M002", 1000, true));
         addTasks(new Task("Battle against the swamp boss.", "Defeat the Swamp Boss Monster to get the toxic orb.", "M003", 0, true));
         addTasks(new Task("Get the Mayor's authorization.", "Talk with Village's Mayor.", "M003", 500, true));
@@ -500,14 +511,24 @@ public class Game {
 
     public void completeSecondaryQ000() {
         if (hero.getDefeatedMonsters() >= 5) {
-            hero.completeTask(searchTask("Q000"));
+            Task t = searchTask("Q000");
+            t.setState(true);
+            hero.completeTask(t);
         }
     }
 
+    public void completeMainM001() {
+        Task t = searchTask("M001");
+        giveReward(true, t);
+        t.setState(true);
+        hero.completeTask(t);
+
+    }
+
     public void completeMainM003() {
-        hero.completeTask(searchTask("M003"));
-        System.out.println(hero.getTasks().size());
-        System.out.println(hero.getCompletedTasks().size());
+        Task t = searchTask("M003");
+        t.setState(true);
+        hero.completeTask(t);
 
     }
 }
