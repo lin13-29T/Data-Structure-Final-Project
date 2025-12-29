@@ -758,7 +758,7 @@ public class SwampDungeon {
         }
 
         if (combat) {
-            battleAgainstBoss((Boss)game.getCharacters().get(12));
+            battleAgainstBoss((Boss) game.getCharacters().get(12));
         }
     }
 
@@ -766,7 +766,7 @@ public class SwampDungeon {
         String bg = "/Resources/textures/Battle/swampBattle.png";
         stopMapMusic();
 
-        CombatScreen cs = new GUI.CombatScreen(game, bg, "Swamp", game.getHero(),true, boss);
+        CombatScreen cs = new GUI.CombatScreen(game, bg, "Swamp", game.getHero(), true, boss);
 
         cs.setBattleMusicPath("/Resources/music/bossBattle1.mp3");
 
@@ -792,7 +792,8 @@ public class SwampDungeon {
             }
             cs.show();
         });
-        game.completeMainQ003();
+        game.completeMainM003();
+        redrawRoomAfterBoss();
 
     }
 
@@ -815,7 +816,7 @@ public class SwampDungeon {
 
             if (k == KeyCode.P) {
                 System.out.println("Hero position (Zona): (" + heroView.getLayoutX() + ", " + heroView.getLayoutY() + ")");
-                System.out.println("Hero world center (aldea): (" + (heroView.getLayoutX() + HERO_W / 2) + ", " + (heroView.getLayoutY() + HERO_H / 2) + ")");
+                //  System.out.println("Hero world center (aldea): (" + (heroView.getLayoutX() + HERO_W / 2) + ", " + (heroView.getLayoutY() + HERO_H / 2) + ")");
             }
 
             if (k == KeyCode.I || k == KeyCode.ADD || k == KeyCode.PLUS) {
@@ -838,7 +839,8 @@ public class SwampDungeon {
             if (k == KeyCode.ENTER) {
                 if (bossView != null) {
                     checkBossTriggers();
-                } else if (beforeDungeon) {
+                }
+                if (beforeDungeon) {
                     checkDungeonTriggers();
 
                     if (onStartRect) {
@@ -1307,6 +1309,7 @@ public class SwampDungeon {
         if (beforeDungeon) {
             beforeDungeon = false;
             populateSwamp2Obstacles();
+            createReturnTriggerRect();
 
             try {
                 world.getChildren().removeIf(n -> {
@@ -1324,7 +1327,7 @@ public class SwampDungeon {
                 world.getChildren().add(heroView);
             }
             heroView.toFront();
-            createReturnTriggerRect();
+
             createBossTriggerRects();
 
             updateCamera();
@@ -1488,6 +1491,47 @@ public class SwampDungeon {
             }
             heroView.toFront();
         }
+    }
+
+    public void redrawRoomAfterBoss() {
+        Platform.runLater(() -> {
+            try {
+                if (bossView != null) {
+                    try {
+                        world.getChildren().remove(bossView);
+                    } catch (Throwable ignored) {
+                    }
+                    bossView = null;
+                }
+
+                try {
+                    for (Rectangle r : bossTriggerRects) {
+                        world.getChildren().remove(r);
+                    }
+                    bossTriggerRects.clear();
+                } catch (Throwable ignored) {
+                }
+
+                obstacles.clear();
+                populateSwamp2Obstacles();
+                if (!world.getChildren().contains(heroView)) {
+                    world.getChildren().add(heroView);
+                }
+                heroView.toFront();
+
+                createReturnTriggerRect();
+
+                updateCamera();
+
+                FadeTransition ft = new FadeTransition(Duration.millis(260), root);
+                ft.setFromValue(0.95);
+                ft.setToValue(1.0);
+                ft.play();
+
+            } catch (Throwable t) {
+                System.err.println("Error al redibujar la sala tras boss: " + t.getMessage());
+            }
+        });
     }
 
 }

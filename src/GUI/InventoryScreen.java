@@ -55,7 +55,6 @@ public class InventoryScreen {
     public InventoryScreen(Game game, Object mapScreen) {
         this.game = game;
         this.mapScreen = mapScreen;
-
         root = new StackPane();
         root.setPrefSize(800, 600);
 
@@ -275,7 +274,6 @@ public class InventoryScreen {
         grid.getChildren().addAll(armorTitle, armorValue);
         rightRow++;
 
-
         Label levelProgressTitle = new Label("LEVEL PROGRESSION");
         levelProgressTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #aaddff;");
         GridPane.setConstraints(levelProgressTitle, 0, 6, 2, 1);
@@ -289,7 +287,6 @@ public class InventoryScreen {
         levelProgressArea.setStyle("-fx-control-inner-background: #0a0a14; -fx-text-fill: #aaddff; "
                 + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px; -fx-border-color: #333344;");
 
-       
         StringBuilder sb = new StringBuilder();
         sb.append("Current Level: ").append(hero.getLevel()).append("\n");
         sb.append("Experience: ").append(hero.getExpActual()).append(" / ").append(hero.getExpMax()).append("\n\n");
@@ -520,7 +517,7 @@ public class InventoryScreen {
                             h.setLastPosY(864.0);
                             h.setLastLocation(Hero.Location.FIELD_VILLAGE);
                         }
-                        case "GameMapScreen" ->{
+                        case "GameMapScreen" -> {
                             h.setLastPosX(682.4067800000003);
                             h.setLastPosY(400.5119300000001);
                             h.setLastLocation(Hero.Location.MAP);
@@ -672,7 +669,7 @@ public class InventoryScreen {
                 FXGL.getGameScene().clearUINodes();
             } catch (Throwable ignored) {
             }
-
+            close();
             MainScreen.restoreMenuAndMusic();
         });
 
@@ -766,109 +763,140 @@ public class InventoryScreen {
         this.onClose = onClose;
     }
 
-    public void show() {
-        isVisible = true;
-
-        FXGL.getGameScene().addUINode(root);
-
-        try {
-            AudioManager.pauseAll();
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            sceneRootRef = FXGL.getGameScene().getRoot();
-            if (sceneRootRef != null) {
-                sceneKeyFilter = ev -> {
-                    Object tgt = ev.getTarget();
-                    if (tgt instanceof Node && !isNodeDescendantOfRoot((Node) tgt)) {
-                        ev.consume();
-                    }
-                };
-                sceneMouseFilter = ev -> {
-                    Object tgt = ev.getTarget();
-                    if (tgt instanceof Node && !isNodeDescendantOfRoot((Node) tgt)) {
-                        ev.consume();
-                    }
-                };
-                sceneRootRef.addEventFilter(KeyEvent.ANY, sceneKeyFilter);
-                sceneRootRef.addEventFilter(MouseEvent.ANY, sceneMouseFilter);
+    // Helper: comprueba si 'node' está dentro del árbol de 'ancestor'
+    private boolean isDescendant(Node node, Parent ancestor) {
+        boolean result = false;
+        Node cur = node;
+        while (cur != null) {
+            if (cur == ancestor) {
+                result = true;
+                break;
             }
-        } catch (Throwable ignored) {
+            cur = cur.getParent();
         }
+        return result;
+    }
 
-        Platform.runLater(() -> root.requestFocus());
+    public void show() {
+        Platform.runLater(() -> {
+            MainScreen.setModalOpen(true);
+
+            try {
+                sceneRootRef = FXGL.getGameScene().getRoot();
+
+                sceneKeyFilter = (EventHandler<KeyEvent>) ev -> {
+                    Node targetNode = (ev.getTarget() instanceof Node) ? (Node) ev.getTarget() : null;
+                    boolean insideInventory = false;
+                    if (targetNode != null) {
+                        insideInventory = isDescendant(targetNode, root);
+                    }
+                    if (!insideInventory) {
+                        ev.consume();
+                    }
+                };
+
+                sceneMouseFilter = (EventHandler<MouseEvent>) ev -> {
+                    Node targetNode = (ev.getTarget() instanceof Node) ? (Node) ev.getTarget() : null;
+                    boolean insideInventory = false;
+                    if (targetNode != null) {
+                        insideInventory = isDescendant(targetNode, root);
+                    }
+                    if (!insideInventory) {
+                        ev.consume();
+                    }
+                };
+
+                if (sceneRootRef != null) {
+                    try {
+                        sceneRootRef.addEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    } catch (Throwable ignored) {
+                    }
+                    try {
+                        sceneRootRef.addEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                try {
+                    FXGL.getGameScene().addUINode(root);
+                } catch (Throwable ignored) {
+                }
+
+                root.setFocusTraversable(true);
+                root.requestFocus();
+                isVisible = true;
+
+                root.addEventFilter(KeyEvent.KEY_PRESSED, ev -> {
+                    switch (ev.getCode()) {
+                        case ESCAPE:
+                            ev.consume();
+                            close();
+                            break;
+                        default:
+                            break;
+                    }
+                });
+
+            } catch (Throwable ignored) {
+                MainScreen.setModalOpen(false);
+            }
+        });
     }
 
     public void close() {
-        isVisible = false;
+        Platform.runLater(() -> {
+            try {
+                // Intentar quitar el UI del inventario
+                try {
+                    FXGL.getGameScene().removeUINode(root);
+                } catch (Throwable ignored) {
+                }
 
-        try {
-            Parent currentRoot = FXGL.getGameScene().getRoot();
-            if (sceneRootRef != null) {
-                try {
-                    sceneRootRef.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
-                } catch (Throwable ignored) {
-                }
-                try {
-                    sceneRootRef.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
-                } catch (Throwable ignored) {
-                }
-            }
-            if (currentRoot != null && currentRoot != sceneRootRef) {
-                try {
-                    currentRoot.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
-                } catch (Throwable ignored) {
-                }
-                try {
-                    currentRoot.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
-                } catch (Throwable ignored) {
-                }
-            }
-        } catch (Throwable ignored) {
-        } finally {
-            sceneKeyFilter = null;
-            sceneMouseFilter = null;
-            sceneRootRef = null;
-        }
-
-        try {
-            FXGL.getGameScene().removeUINode(root);
-        } catch (Throwable ignored) {
-        }
-        try {
-            AudioManager.resumeAll();
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            if (mapScreen != null) {
-                try {
-                    Method m = mapScreen.getClass().getMethod("getRoot");
-                    Object r = m.invoke(mapScreen);
-                    if (r instanceof Node) {
-                        Platform.runLater(() -> ((Node) r).requestFocus());
-                    }
-                } catch (NoSuchMethodException nsme) {
+                // Intentar quitar filtros desde la raíz donde se añadieron
+                if (sceneRootRef != null) {
                     try {
-                        Method m2 = mapScreen.getClass().getMethod("requestFocus");
-                        m2.invoke(mapScreen);
+                        sceneRootRef.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
                     } catch (Throwable ignored) {
                     }
+                    try {
+                        sceneRootRef.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                Parent currentRoot = null;
+                try {
+                    currentRoot = FXGL.getGameScene().getRoot();
                 } catch (Throwable ignored) {
                 }
-            } else {
-                Parent sceneRoot = FXGL.getGameScene().getRoot();
-                if (sceneRoot != null) {
-                    Platform.runLater(sceneRoot::requestFocus);
+                if (currentRoot != null && currentRoot != sceneRootRef) {
+                    try {
+                        currentRoot.removeEventFilter(KeyEvent.ANY, sceneKeyFilter);
+                    } catch (Throwable ignored) {
+                    }
+                    try {
+                        currentRoot.removeEventFilter(MouseEvent.ANY, sceneMouseFilter);
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                sceneKeyFilter = null;
+                sceneMouseFilter = null;
+                sceneRootRef = null;
+
+            } catch (Throwable ignored) {
+            } finally {
+                // Asegurar que el flag se desactive y ejecutar onClose
+                MainScreen.setModalOpen(false);
+                isVisible = false;
+                if (onClose != null) {
+                    try {
+                        onClose.run();
+                    } catch (Throwable ignored) {
+                    }
                 }
             }
-        } catch (Throwable ignored) {
-        }
-
-        if (onClose != null) {
-            onClose.run();
-        }
+        });
     }
 
     public void toggle() {

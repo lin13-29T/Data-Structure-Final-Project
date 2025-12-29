@@ -10,7 +10,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.time.LocalDateTime;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Queue;
 
 public class Game {
 
@@ -28,9 +31,7 @@ public class Game {
     }
 
     public void createHero(String name) {
-
         Classes root = ((BinaryTreeNode<Classes>) classes.getRoot()).getInfo();
-
         hero = new Hero(name, (Weapon) items.get(0), (Armor) items.get(8), root);
         // Para testear el inventario 
         hero.getItems().addLast(items.get(1));
@@ -47,6 +48,8 @@ public class Game {
         hero.addTasks(tasks.get(0));
         hero.addTasks(tasks.get(1));
         hero.addTasks(tasks.get(2));
+        hero.addTasks(tasks.get(3));
+
     }
 
     public boolean levelUp() {
@@ -335,7 +338,7 @@ public class Game {
         }
         return cured;
     }
-    
+
     public void createItems() {
         //Weapons
         items.add(new Fist("Your hands, it is the easiest way to attack!", "Bare Hands", "H000", 5, 120000, "Inflicts damage.", -1));
@@ -479,7 +482,7 @@ public class Game {
     public Task searchTask(String id) {
         Task t = null;
         for (Task task : tasks) {
-            if (t.getId().equals(task.getId())) {
+            if (id.equals(task.getId())) {
                 t = task;
             }
         }
@@ -501,7 +504,10 @@ public class Game {
         }
     }
 
-    public void completeMainQ003() {
+    public void completeMainM003() {
+        hero.completeTask(searchTask("M003"));
+        System.out.println(hero.getTasks().size());
+        System.out.println(hero.getCompletedTasks().size());
 
     }
 }

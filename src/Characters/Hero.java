@@ -59,10 +59,8 @@ public class Hero implements Serializable {
         setMoney(50);
         items = new LinkedList<>();
         actualWeapon = weapon;
-        
         BinaryTreeNode<Classes> heroRoot = new BinaryTreeNode<>(root);
         unlockedClasses = new GeneralTree<>(heroRoot);
-
         tasks = new ArrayDeque<>();
         completedTasks = new ArrayDeque<>();
         loadFxImage();
@@ -333,6 +331,8 @@ public class Hero implements Serializable {
             if (t.getId().equalsIgnoreCase(quest.getId())) {
                 found = true;
                 completedTasks.push(quest);
+            } else {
+                aux.offer(quest);
             }
 
         }
@@ -349,6 +349,7 @@ public class Hero implements Serializable {
             if (t.getId().equalsIgnoreCase(quest.getId())) {
                 found = true;
             }
+            aux.offer(quest);
         }
         while (!aux.isEmpty()) {
             tasks.offer(aux.poll());
@@ -364,6 +365,8 @@ public class Hero implements Serializable {
             if (t.getId().equalsIgnoreCase(quest.getId())) {
                 found = true;
             }
+            aux.push(quest);
+
         }
         while (!aux.isEmpty()) {
             completedTasks.push(aux.pop());
@@ -379,6 +382,7 @@ public class Hero implements Serializable {
             if (t.getId().equalsIgnoreCase(quest.getId())) {
                 t = quest;
             }
+            aux.offer(t);
         }
         while (!aux.isEmpty()) {
             tasks.offer(aux.poll());
@@ -394,6 +398,7 @@ public class Hero implements Serializable {
             if (t.getId().equalsIgnoreCase(quest.getId())) {
                 t = quest;
             }
+            aux.push(quest);
         }
         while (!aux.isEmpty()) {
             completedTasks.push(aux.pop());
