@@ -43,6 +43,11 @@ public class Game {
         hero.getItems().addLast(items.get(9));
         hero.getItems().addLast(items.get(23));
         hero.getItems().addLast(items.get(24));
+
+        // Para agregar misiones
+        hero.addTasks(tasks.get(0));
+        hero.addTasks(tasks.get(1));
+        hero.addTasks(tasks.get(2));
     }
 
     public boolean levelUp() {
@@ -388,7 +393,7 @@ public class Game {
         characters.add(new Monster((Weapon) items.get(9), 15, 9, "Shadow Fiend", "/Resources/sprites/Monsters/swampMonster01.png", 87, 87, 70, 120, "Swamp"));
         characters.add(new Monster((Weapon) items.get(11), 14, 12, "Pot Fiend", "/Resources/sprites/Monsters/swampMonster04.png", 52, 52, 60, 125, "Swamp"));
         characters.add(new Monster((Weapon) items.get(9), 12, 7, "Toxic Lizard", "/Resources/sprites/Monsters/swampMonster03.png", 75, 75, 50, 100, "Swamp"));
-        characters.add(new Monster((Weapon) items.get(9), 32, 15, "Venom Demon King", "/Resources/sprites/Monsters/swampBoss01.png", 280, 180, 200, 800, "SwampBoss"));
+        characters.add(new Boss((Weapon) items.get(9), 32, 15, "Venom Demon King", "/Resources/sprites/Monsters/swampBoss01.png", 280, 180, 200, 800, "SwampBoss"));
         //Volcano
         characters.add(new Monster((Weapon) items.get(13), 18, 10, "Salaflamender", "/Resources/sprites/Monsters/volcano00.png", 105, 105, 100, 150, "Volcano"));
         characters.add(new Monster((Weapon) items.get(9), 16, 13, "Dragon Egg", "/Resources/sprites/Monsters/volcano01.png", 110, 110, 95, 140, "Volcano"));
@@ -460,15 +465,44 @@ public class Game {
 
     public void createTasks() {
         //Main Quests
-        addTasks(new Task("Explore the sky Ruins.", "Complete the road of Sky Island.", "T000", 10000, true));
-        addTasks(new Task("Search the Toxic Orb.", "Complete the road of Swamp.", "T001", 1000, true));
-        addTasks(new Task("Search the Lava Orb.", "Complete the road of Volcano.", "T0002", 1000, true));
-        addTasks(new Task("Get the Mayor's authorization.", "Talk with Village's Mayor.", "T003", 500, true));
+        addTasks(new Task("Explore the Misterious Sky Ruins.", "Search what is hidden in the Sky Island.", "M000", 10000, true));
+        addTasks(new Task("Search the Toxic Orb.", "Complete the road of Swamp.", "M001", 1000, true));
+        addTasks(new Task("Search the Lava Orb.", "Complete the road of Volcano.", "M002", 1000, true));
+        addTasks(new Task("Battle against the swamp boss.", "Defeat the Swamp Boss Monster to get the toxic orb.", "M003", 0, true));
+        addTasks(new Task("Get the Mayor's authorization.", "Talk with Village's Mayor.", "M003", 500, true));
         //Secondary Quests
-        addTasks(new Task("Defeat 5 monsters.", "Kill 5 monsters anywhere.", "T004", 500, false));
-        addTasks(new Task("Defeat 30 monsters.", "Kill 30 monsters anywhere.", "T005", 1000, false));
-        addTasks(new Task("Heal yourself.", "Use a healing item once.", "T006", 100, false));
+        addTasks(new Task("Defeat 5 monsters.", "Kill 5 monsters anywhere.", "Q000", 500, false));
+        addTasks(new Task("Defeat 30 monsters.", "Kill 30 monsters anywhere.", "Q001", 1000, false));
+        addTasks(new Task("Heal yourself.", "Use a healing item once.", "Q002", 100, false));
         //Task(String name, String info, String id, int money, boolean mainQuest)
     }
 
+    public Task searchTask(String id) {
+        Task t = null;
+        for (Task task : tasks) {
+            if (t.getId().equals(task.getId())) {
+                t = task;
+            }
+        }
+
+        return t;
+    }
+
+    public void giveReward(boolean reward, Task t) {
+        if (reward) {
+            for (Item i : t.getRewards()) {
+                hero.getItems().add(i);
+            }
+        }
+    }
+
+    public void completeSecondaryQ000() {
+        if (hero.getDefeatedMonsters() >= 5) {
+            hero.completeTask(searchTask("Q000"));
+        }
+    }
+
+    public void completeMainQ003() {
+
+    }
 }
